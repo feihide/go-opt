@@ -1,0 +1,21 @@
+ Wed Dec 13 09:24:16 UTC 2017  opt:dev-front result:更新失败 
+ Wed Dec 13 09:17:14 UTC 2017  opt:test-front result:更新成功 
+ Wed Dec 13 09:17:01 UTC 2017  opt:dev-front result:更新成功 
+ Wed Dec 13 09:16:01 UTC 2017  opt:dev-front result:更新成功 
+ Wed Dec 13 09:04:00 UTC 2017  opt:dev-front result:ok 
+ Wed Dec 13 08:58:58 UTC 2017  opt:dev-front result:ok 
+ Wed Dec 13 08:58:23 UTC 2017  opt:dev-front result:ok 
+ Wed Dec 13 08:46:14 UTC 2017  opt:dev-front result:ok 
+ Wed Dec 13 08:34:49 UTC 2017  opt:product-front result:ok 
+ Wed Dec 13 08:34:48 UTC 2017  opt:test-front result:ok 
+ Wed Dec 13 08:34:47 UTC 2017  opt:dev-front result:ok 
+ Wed Dec 13 08:31:30 UTC 2017  opt:dev-front result:ok 
+ Wed Dec 13 08:13:48 UTC 2017  opt:test-java result:ok 
+ Wed Dec 13 08:13:44 UTC 2017  opt:dev-java result:ok 
+ Wed Dec 13 08:07:01 UTC 2017  opt:product-front result:ok 
+ Wed Dec 13 08:06:57 UTC 2017  opt:test-front result:ok 
+ Wed Dec 13 08:06:52 UTC 2017  opt:dev-front result:ok 
+ Wed Dec 13 08:05:56 UTC 2017  opt:dev-front result:ok
+ Wed Dec 13 08:05:50 UTC 2017  opt:dev-front result:ok
+`date`  opt:dev-java result:ok 
+`date`  opt:test-java result:ok 

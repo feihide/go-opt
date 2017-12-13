@@ -1,0 +1,35 @@
+
+<h3>开发环境暂无需执行密码</h3>
+<table border=1>
+<tr><th>env</th><th>front</th><td>java</th><th>pc</th><th>wechat</th></tr>
+ {{range .envs}}
+ <tr><td>{{ .Title }}</td><td><button type="button"  style="border:1px solid #FF9933 ;" id="{{.Name}}-front">执行更新</button>
+ <input type="password" id="{{.Name}}-front-pwd" placeholder="执行密码" />
+ </td><td><button type="button"  style="border:1px solid #FF9933 ;"  id="{{ .Name }}-java">执行更新</button>
+ <input type="password" id="{{.Name}}-java-pwd" placeholder="执行密码" /> 
+ </td><td>待检测</td><td>待检测</td><tr>
+ {{end}}
+</table>
+<hr>
+<p>操作历史</p>
+<pre>{{.log}}</pre>
+
+<script src="/js/jquery-3.2.1.min.js"></script>
+<script>
+$("button").click(function(){  
+  $(this).html("更新中...")  
+  var name = $(this).attr('id')
+      $("#"+name).attr("disabled",true);  
+  $.ajax({
+      url:"/opt/run",
+      method:"POST",
+      data:{name:$(this).attr('id'),pwd:$("#"+name+"-pwd").val()}
+  }).done(function(msg){
+      $("#"+name).html(msg.result)  
+      $("#"+name).attr("disabled",false);  
+     } );
+})
+
+$(document).ready(function(){
+})
+</script>

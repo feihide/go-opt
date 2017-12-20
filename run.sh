@@ -9,5 +9,5 @@ if [ "$name" = "" ]; then
 fi
 
 ps -ef | grep ./$name | grep -v grep | awk '{print $2}' | xargs -r  kill -9 
-cd $project/bin/mac
+cd $project/bin
 ./$name

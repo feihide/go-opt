@@ -8,9 +8,6 @@ if [ "$name" = "" ]; then
     name="main"
 fi
 
-gofmt -w -l  $project/src
-
-go build -o $project/bin/$name  $project/src/$name.go
-ps -ef | grep ./$name | grep -v grep | awk '{print $2}' | xargs -r kill -9 
-cd $project/bin
+ps -ef | grep ./$name | grep -v grep | awk '{print $2}' | xargs -r  kill -9 
+cd $project/bin/mac
 ./$name

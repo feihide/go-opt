@@ -163,7 +163,6 @@ func main() {
 		fmt.Println(resultStatus)
 		r.HTML(200, "opt", map[string]interface{}{"envs": envs, "log": string(logData)})
 	})
-
 	m.Get("/opt/run", func(req *http.Request, r render.Render) {
 		queryForm, _ := url.ParseQuery(req.URL.RawQuery)
 		fmt.Println(queryForm)
@@ -171,6 +170,7 @@ func main() {
 		r.JSON(200, map[string]interface{}{"result": "ok"})
 	})
 
+	running := map[string]bool{"dev-front": false, "dev-java": false, "test-front": false, "test-java": false, "product-front": false, "proudct-java": false}
 	m.Post("/opt/run", func(w http.ResponseWriter, req *http.Request, r render.Render) {
 		//fmt.Fprintln(w, req.PostFormValue("name"))
 		name := req.PostFormValue("name")
@@ -196,31 +196,39 @@ func main() {
 		if isAllow == 0 {
 			data = "无权更新"
 		} else {
-			//command := "ls"
-			//params := []string{"-l"}
-			//执行cmd命令: ls -l
-			command := "cd /work/kl/bin"
-			if num == 1 {
-				command += "&&./auto.sh " + req.PostFormValue("name") + " update"
-			} else {
-				for i := 1; i < num+1; i++ {
-					command += "&&./auto.sh " + req.PostFormValue("name") + strconv.Itoa(i) + " update"
+			if running[name] == false {
+				running[name] = true
+				fmt.Println(running)
+				//command := "ls"
+				//params := []string{"-l"}
+				//执行cmd命令: ls -l
+				command := "cd /work/kl/bin"
+				if num == 1 {
+					command += "&&./auto.sh " + req.PostFormValue("name") + " update"
+				} else {
+					for i := 1; i < num+1; i++ {
+						command += "&&./auto.sh " + req.PostFormValue("name") + strconv.Itoa(i) + " update"
+					}
 				}
-			}
-			//command := "sleep 3&& echo 'fk'"
-			ret, err := execCmd(command)
-			if err != nil {
-				fmt.Println(err)
-				data = "更新失败"
+				//commandTest := "sleep 3&& echo 'fk'"
+				ret, err := execCmd(command)
+				if err != nil {
+					fmt.Println(err)
+					data = "更新失败"
+				} else {
+					fmt.Println(ret)
+					data = "更新成功"
+				}
+				comm := "sed  -i \"1i\\ `date`  opt:" + name + " result:" + data + " \r\"  log.txt"
+				//写入日志
+				execCmd(comm)
+				//run := "echo \" `date`  " + ret + " \"  >> runtime.txt"
+				//execCmd(run)
+				running[name] = false
 			} else {
-				fmt.Println(ret)
-				data = "更新成功"
+				fmt.Println("block")
+				data = "执行更新中"
 			}
-			comm := "sed  -i \"1i\\ `date`  opt:" + name + " result:" + data + " \r\"  log.txt"
-			//写入日志
-			execCmd(comm)
-			//run := "echo \" `date`  " + ret + " \"  >> runtime.txt"
-			//execCmd(run)
 		}
 		r.JSON(200, map[string]interface{}{"result": data})
 	})

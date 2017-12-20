@@ -1,4 +1,6 @@
 #! /bin/sh
+#nohup ./run.sh > log  2>&1 &
+#tail -f log
 project=$1
 if [ "$project" = "" ]; then
     project="app"

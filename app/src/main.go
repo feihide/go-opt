@@ -219,8 +219,8 @@ func main() {
 			comm := "sed  -i \"1i\\ `date`  opt:" + name + " result:" + data + " \r\"  log.txt"
 			//写入日志
 			execCmd(comm)
-			run := "echo \" `date`  " + ret + " \"  >> runtime.txt"
-			execCmd(run)
+			//run := "echo \" `date`  " + ret + " \"  >> runtime.txt"
+			//execCmd(run)
 		}
 		r.JSON(200, map[string]interface{}{"result": data})
 	})

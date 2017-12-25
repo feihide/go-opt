@@ -3,7 +3,7 @@
 <h4><input type="button"  value="reload" id ="reload"></h4>
 <hr>
 <table border=1>
-<tr><th>env</th><th>front</th><td>java</th><th>pc</th><th>wechat</th></tr>
+<tr><th>env</th><th>front</th><td>java</th><th>pc</th><th>wechat</th><th>config</th></tr>
  {{range $item := .envs}}
  <tr><td>{{ $item.Title }}</td><td><button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-front">执行更新</button>
  集群:<span id="{{$item.Name}}-front-num">{{$item.Number}}</span>台
@@ -13,7 +13,8 @@
  集群:<span id="{{.Name}}-java-num">{{$item.Number}}</span>台
  <button type="button"  style="border:1px solid #FF9933 ;"  id="{{ $item.Name }}-java">执行更新</button>
  <input type="password" id="{{$item.Name}}-java-pwd" placeholder="执行密码" /> 
- </td><td>{{$item.Pc }}</td><td>{{$item.Wechat}}</td><tr>
+ </td><td>{{$item.Pc }}</td><td>{{$item.Wechat}}</td>
+ <td><span name="config" id="{{$item.Name}}">查看</span></td><tr>
  {{end}}
 </table>
 <hr>
@@ -25,7 +26,18 @@
 $("#reload").click(function(){
 window.location.reload()
 })
-
+$("span[name='config']").bind("click",function(){
+  var name = $(this).attr('id')
+  $.ajax({
+      url:"/opt/config",
+      method:"GET",
+      data:{
+          name:name
+      }
+  }).done(function(msg){
+      alert(msg.result)  
+     } );
+})
 $("button").click(function(){  
   $(this).html("更新中...")  
   var name = $(this).attr('id')

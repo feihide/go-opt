@@ -13,7 +13,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
+	//"net/url"
 	"os"
 	"os/exec"
 	"strconv"
@@ -163,11 +163,13 @@ func main() {
 		fmt.Println(resultStatus)
 		r.HTML(200, "opt", map[string]interface{}{"envs": envs, "log": string(logData)})
 	})
-	m.Get("/opt/run", func(req *http.Request, r render.Render) {
-		queryForm, _ := url.ParseQuery(req.URL.RawQuery)
-		fmt.Println(queryForm)
-		fmt.Println(req.FormValue("name"))
-		r.JSON(200, map[string]interface{}{"result": "ok"})
+	m.Get("/opt/config", func(req *http.Request, r render.Render) {
+		//queryForm, _ := url.ParseQuery(req.URL.RawQuery)
+		name := req.FormValue("name")
+
+		dat, err := ioutil.ReadFile("/work/kl/bin/" + name + "_export.cnf")
+		check(err)
+		r.JSON(200, map[string]interface{}{"result": string(dat)})
 	})
 
 	running := map[string]bool{"dev-front": false, "dev-java": false, "test-front": false, "test-java": false, "product-front": false, "proudct-java": false}
@@ -212,11 +214,11 @@ func main() {
 				}
 				//commandTest := "sleep 3&& echo 'fk'"
 				ret, err := execCmd(command)
+				fmt.Println(ret)
 				if err != nil {
 					fmt.Println(err)
 					data = "更新失败"
 				} else {
-					fmt.Println(ret)
 					data = "更新成功"
 				}
 				comm := "sed  -i \"1i\\ `date`  opt:" + name + " result:" + data + " \r\"  log.txt"

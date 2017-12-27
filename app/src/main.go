@@ -181,7 +181,9 @@ func main() {
 		tmp := strings.Split(name, "-")
 		isAllow := 0
 		if tmp[0] == "dev" {
-			isAllow = 1
+			if pwd == "kldev" {
+				isAllow = 1
+			}
 		}
 		if tmp[0] == "test" {
 			if pwd == test_pwd {

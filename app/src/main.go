@@ -173,6 +173,30 @@ func main() {
 	})
 
 	running := map[string]bool{"dev-front": false, "dev-java": false, "test-front": false, "test-java": false, "product-front": false, "proudct-java": false}
+
+	m.Post("/opt/changeconfig", func(w http.ResponseWriter, req *http.Request, r render.Render) {
+		name := req.PostFormValue("name")
+		pwd := req.PostFormValue("pwd")
+		content := req.PostFormValue("content")
+		//fmt.Fprintln(w, req.PostFormValue("name"))
+		if pwd != "feihide" {
+			r.JSON(200, map[string]interface{}{"result": "无权限修改"})
+		} else {
+			ioutil.WriteFile("/work/kl/bin/"+name+"_export.cnf", []byte(content), 0644)
+			command := "svn ci -m'自动更新配置！!!' /work/kl/bin/" + name + "_export.cnf"
+			ret, err := execCmd(command)
+			fmt.Println(ret)
+			data := ""
+			if err != nil {
+				data = "更新失败"
+			} else {
+				data = "更新成功"
+			}
+
+			r.JSON(200, map[string]interface{}{"result": data})
+		}
+	})
+
 	m.Post("/opt/run", func(w http.ResponseWriter, req *http.Request, r render.Render) {
 		//fmt.Fprintln(w, req.PostFormValue("name"))
 		name := req.PostFormValue("name")
@@ -218,7 +242,6 @@ func main() {
 				ret, err := execCmd(command)
 				fmt.Println(ret)
 				if err != nil {
-					fmt.Println(err)
 					data = "更新失败"
 				} else {
 					data = "更新成功"

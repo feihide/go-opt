@@ -1,5 +1,20 @@
-
-<h3>开发环境暂无需执行密码</h3>
+<style type="text/css" >
+.succ-pop{
+    width: 400px;
+    height: 300px;
+    background: #fff;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    margin-left: -200px;
+    margin-top: -150px;
+    z-index: 999;
+    border-radius: 5px;
+    border:3px solid #000;
+    display:none;
+} 
+</style>
+<h2>ICTOP</h2>
 <h4><input type="button"  value="reload" id ="reload"></h4>
 <hr>
 <table border=1>
@@ -14,9 +29,17 @@
  <button type="button"  style="border:1px solid #FF9933 ;"  id="{{ $item.Name }}-java">执行更新</button>
  <input type="password" id="{{$item.Name}}-java-pwd" placeholder="执行密码" /> 
  </td><td>{{$item.Pc }}</td><td>{{$item.Wechat}}</td>
- <td><span name="config" id="{{$item.Name}}">查看</span></td><tr>
+ <td><span name="config" id="{{$item.Name}}">查看</span> | <span name="change_config" id="{{$item.Name}}">编辑</span></td><tr>
  {{end}}
 </table>
+<div class="succ-pop" id="change_div" >
+    <center><span>    密码: </span><span><input id="change_pwd" type="password"></span></center>
+    <p><input id="change_name" type="hidden" ></p>
+    <center><span>    内容: </span><span><textarea  id="change_content" style="width:300px; height:200px"></textarea></span></center>
+    <p></p>
+    <center><input type="button" id="change_ok" value="确认">   or    <input type="button" id="change_cancel" value="取消"></center>
+ 
+</div>
 <hr>
 <p>操作历史</p>
 <pre>{{.log}}</pre>
@@ -38,6 +61,46 @@ $("span[name='config']").bind("click",function(){
       alert(msg.result)  
      } );
 })
+$("span[name='change_config']").bind("click",function(){
+  var name = $(this).attr('id')
+  $.ajax({
+      url:"/opt/config",
+      method:"GET",
+      data:{
+          name:name
+      }
+  }).done(function(msg){
+    $("#change_content").val(msg.result)
+    $("#change_name").val(name)
+    $("#change_div").show()       
+     } );
+})
+
+$("#change_ok").click(function(){
+  $("#change_ok").val("更新中")
+  $("#change_ok").attr("disabled","disabled")
+  $.ajax({
+      url:"/opt/changeconfig",
+      method:"POST",
+      data:{
+          name:$("#change_name").val(),
+          pwd:$("#change_pwd").val(),
+          content:$("#change_content").val()
+          }
+  }).done(function(msg){
+      alert(msg.result)
+      $("#change_ok").removeAttr("disabled")
+  $("#change_ok").val("确定")
+      if(msg.result=="更新成功"){
+          $("#change_div").hide()
+      }
+  })
+})
+    
+$("#change_cancel").click(function(){
+    $("#change_div").hide()       
+})
+
 $("button").click(function(){  
   $(this).html("更新中...")  
   var name = $(this).attr('id')

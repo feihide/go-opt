@@ -64,7 +64,7 @@ func main() {
 	//	sendSms("15921709039", "xxxx")
 	//	sendSms("15921709039", "xxxx")
 	//	sendSms("15921709039", "xxxx2")
-	ticker := time.NewTicker(time.Minute * 1)
+	ticker := time.NewTicker(time.Minute * 5)
 	go func() {
 		for _ = range ticker.C {
 			timeout := 20

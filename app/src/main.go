@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	//"net/url"
+	"github.com/KenmyZhang/aliyun-communicate"
 	"os"
 	"os/exec"
 	"strconv"
@@ -57,8 +58,41 @@ type ResData struct {
 }
 
 //var Env = Test
+var sendTime = make(map[string]int)
 
 func main() {
+	//	sendSms("15921709039", "xxxx")
+	//	sendSms("15921709039", "xxxx")
+	//	sendSms("15921709039", "xxxx2")
+	ticker := time.NewTicker(time.Minute * 1)
+	go func() {
+		for _ = range ticker.C {
+			timeout := 20
+			t := time.Duration(timeout) * time.Second
+			Client := http.Client{Timeout: t}
+			req, err := http.NewRequest("GET", "http://127.0.0.1:8400/opt", nil)
+			if err != nil {
+				panic(err)
+			}
+			resp, er := Client.Do(req)
+			if er == nil && resp.StatusCode == 200 {
+				b, _ := ioutil.ReadAll(resp.Body)
+				html := "<html>"
+
+				fmt.Println(string(b)[0:6])
+
+				if string(b)[0:6] == html {
+					fmt.Println("页面ok")
+				} else {
+					fmt.Println("页面出错")
+				}
+			} else {
+				fmt.Println("服务器出错")
+			}
+			fmt.Printf("ticked at %v", time.Now())
+		}
+	}()
+
 	port := flag.String("port", "8400", "port number")
 	flag.Parse()
 	fmt.Println("启用端口:", *port)
@@ -151,16 +185,22 @@ func main() {
 			if resultStatus[item.Name+"-pc"].Ok {
 				envs[n].Pc = template.HTML("<font color='green'>正常[耗时:" + resultStatus[item.Name+"-pc"].Duartion + "</font>")
 			} else {
+				go func(itemName string) {
+					sendSms("15921709039", itemName+"-pc")
+				}(item.Name)
 				envs[n].Pc = template.HTML("<font color='red'>异常[耗时:" + resultStatus[item.Name+"-pc"].Duartion + "</font>")
 			}
 			if resultStatus[item.Name+"-wechat"].Ok {
 				content := "正常[耗时:" + resultStatus[item.Name+"-wechat"].Duartion
 				envs[n].Wechat = template.HTML("<font color='green'>" + content + "</font>")
 			} else {
+				go func(itemName string) {
+					sendSms("15921709039", itemName+"-wechat")
+				}(item.Name)
 				envs[n].Wechat = template.HTML("<font color='#FF0000'>异常[耗时:" + resultStatus[item.Name+"-wechat"].Duartion + "</font>")
 			}
 		}
-		fmt.Println(resultStatus)
+		//fmt.Println(resultStatus)
 		r.HTML(200, "opt", map[string]interface{}{"envs": envs, "log": string(logData)})
 	})
 	m.Get("/opt/config", func(req *http.Request, r render.Render) {
@@ -296,6 +336,46 @@ func main() {
 	})
 
 	m.RunOnAddr(":" + *port)
+}
+
+func sendSms(mobile string, msg string) (string, error) {
+	var (
+		gatewayUrl      = "http://dysmsapi.aliyuncs.com/"
+		accessKeyId     = "LTAIv6g2pZQJoCPU"
+		accessKeySecret = "urluI5xS78jVRmeQ6ZOttDryqnJy8h"
+		phoneNumbers    = mobile
+		signName        = "阿里云短信测试专用"
+		templateCode    = "SMS_127169546"
+		templateParam   = "{\"name\":\"" + msg + "\",\"time\":\"" + time.Now().Format("2006-01-02 15:04:05") + "\"}"
+	)
+	//同样的内容过滤重复发送
+	sendT, ok := sendTime[msg]
+	currentTime := int(time.Now().Unix())
+	fmt.Println(currentTime)
+	if ok && currentTime-sendT < 1800 {
+		fmt.Println("半小时内不重复发送")
+		return "", nil
+	} else {
+
+		sendTime[msg] = currentTime
+		smsClient := aliyunsmsclient.New(gatewayUrl)
+		result, err := smsClient.Execute(accessKeyId, accessKeySecret, phoneNumbers, signName, templateCode, templateParam)
+		fmt.Println("Got raw response from server:", string(result.RawResponse))
+		if err != nil {
+			panic("Failed to send Message: " + err.Error())
+		}
+
+		resultJson, err := json.Marshal(result)
+		if err != nil {
+			panic(err)
+		}
+		if result.IsSuccessful() {
+			fmt.Println("A SMS is sent successfully:", resultJson)
+		} else {
+			fmt.Println("Failed to send a SMS:", resultJson)
+		}
+		return string(resultJson), err
+	}
 }
 
 func execCmd(command string) (string, error) {

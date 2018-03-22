@@ -85,9 +85,15 @@ func main() {
 					fmt.Println("页面ok")
 				} else {
 					fmt.Println("页面出错")
+					go func() {
+						sendSms("15921709039", "console页面报错")
+					}()
 				}
 			} else {
 				fmt.Println("服务器出错")
+				go func() {
+					sendSms("15921709039", "console服务报错")
+				}()
 			}
 			fmt.Printf("ticked at %v", time.Now())
 		}

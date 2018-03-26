@@ -135,7 +135,7 @@ func main() {
 		//总并发超时时间
 		//timeover := 10
 		//http请求超时时间
-		timeout := 10
+		timeout := 30
 		t := time.Duration(timeout) * time.Second
 		Client := http.Client{Timeout: t}
 		resultStatus := make(map[string]ResData)

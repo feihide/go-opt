@@ -67,7 +67,7 @@ func main() {
 	ticker := time.NewTicker(time.Minute * 5)
 	go func() {
 		for _ = range ticker.C {
-			timeout := 20
+			timeout := 30
 			t := time.Duration(timeout) * time.Second
 			Client := http.Client{Timeout: t}
 			req, err := http.NewRequest("GET", "http://127.0.0.1:8400/opt", nil)

@@ -126,6 +126,17 @@ func main() {
 		return "Hello world"
 	})
 
+	m.Get("/timeout", func(req *http.Request, r render.Render) {
+		time1 := req.FormValue("time")
+		fmt.Println(time1)
+		if time1 == "" {
+			time1 = "60"
+		}
+		time2, _ := strconv.Atoi(time1)
+
+		time.Sleep(time.Duration(time2) * 1000 * time.Millisecond)
+		r.Text(200, "hello,timeout world")
+	})
 	m.Get("/opt", func(r render.Render) {
 		envs := []Env{{"dev", "开发环境", 1, "", ""}, {"test", "测试环境", 1, "", ""}, {"product", "生产环境", 2, "", ""}}
 		logData, _ := ioutil.ReadFile("log.txt")

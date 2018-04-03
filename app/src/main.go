@@ -127,6 +127,7 @@ func main() {
 	})
 
 	m.Get("/timeout", func(req *http.Request, r render.Render) {
+		beginTime := time.Now()
 		time1 := req.FormValue("time")
 		fmt.Println(time1)
 		if time1 == "" {
@@ -135,7 +136,8 @@ func main() {
 		time2, _ := strconv.Atoi(time1)
 
 		time.Sleep(time.Duration(time2) * 1000 * time.Millisecond)
-		r.Text(200, "hello,timeout world")
+		out := time.Since(beginTime).String()
+		r.Text(200, "hello,timeout :"+out)
 	})
 	m.Get("/opt", func(r render.Render) {
 		envs := []Env{{"dev", "开发环境", 1, "", ""}, {"test", "测试环境", 1, "", ""}, {"product", "生产环境", 2, "", ""}}
@@ -202,18 +204,14 @@ func main() {
 			if resultStatus[item.Name+"-pc"].Ok {
 				envs[n].Pc = template.HTML("<font color='green'>正常[耗时:" + resultStatus[item.Name+"-pc"].Duartion + "</font>")
 			} else {
-				go func(itemName string) {
-					sendSms("15921709039", itemName+"-pc")
-				}(item.Name)
+				go sendSms("15921709039", item.Name+"-pc")
 				envs[n].Pc = template.HTML("<font color='red'>异常[耗时:" + resultStatus[item.Name+"-pc"].Duartion + "</font>")
 			}
 			if resultStatus[item.Name+"-wechat"].Ok {
 				content := "正常[耗时:" + resultStatus[item.Name+"-wechat"].Duartion
 				envs[n].Wechat = template.HTML("<font color='green'>" + content + "</font>")
 			} else {
-				go func(itemName string) {
-					sendSms("15921709039", itemName+"-wechat")
-				}(item.Name)
+				go sendSms("15921709039", item.Name+"-wechat")
 				envs[n].Wechat = template.HTML("<font color='#FF0000'>异常[耗时:" + resultStatus[item.Name+"-wechat"].Duartion + "</font>")
 			}
 		}

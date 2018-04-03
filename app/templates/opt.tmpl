@@ -18,7 +18,7 @@
 <h4><input type="button"  value="reload" id ="reload"></h4>
 <hr>
 <table border=1>
-<tr><th>env</th><th>front</th><td>java</th><th>pc</th><th>wechat</th><th>config</th></tr>
+<tr><th>env</th><th>front</th><th>end</th><th>pc</th><th>wechat</th><th>config</th></tr>
  {{range $item := .envs}}
  <tr><td>{{ $item.Title }}</td><td><button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-front">执行更新</button>
  集群:<span id="{{$item.Name}}-front-num">{{$item.Number}}</span>台

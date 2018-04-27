@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	//"net/url"
 	"github.com/KenmyZhang/aliyun-communicate"
 	"os"
@@ -59,43 +60,48 @@ type ResData struct {
 
 //var Env = Test
 var sendTime = make(map[string]int)
+var isConsole = false
+var consoleStatus = "console close"
 
 func main() {
 	//	sendSms("15921709039", "xxxx")
 	//	sendSms("15921709039", "xxxx")
 	//	sendSms("15921709039", "xxxx2")
 	ticker := time.NewTicker(time.Minute * 5)
+	initQueue()
 	go func() {
+		timeout := 30
+		t := time.Duration(timeout) * time.Second
 		for _ = range ticker.C {
-			timeout := 30
-			t := time.Duration(timeout) * time.Second
-			Client := http.Client{Timeout: t}
-			req, err := http.NewRequest("GET", "http://127.0.0.1:8400/opt", nil)
-			if err != nil {
-				panic(err)
-			}
-			resp, er := Client.Do(req)
-			if er == nil && resp.StatusCode == 200 {
-				b, _ := ioutil.ReadAll(resp.Body)
-				html := "<html>"
+			if isConsole {
+				Client := http.Client{Timeout: t}
+				req, err := http.NewRequest("GET", "http://127.0.0.1:8400/opt", nil)
+				if err != nil {
+					panic(err)
+				}
+				resp, er := Client.Do(req)
+				if er == nil && resp.StatusCode == 200 {
+					b, _ := ioutil.ReadAll(resp.Body)
+					html := "<html>"
 
-				fmt.Println(string(b)[0:6])
+					fmt.Println(string(b)[0:6])
 
-				if string(b)[0:6] == html {
-					fmt.Println("页面ok")
+					if string(b)[0:6] == html {
+						fmt.Println("页面ok")
+					} else {
+						fmt.Println("页面出错")
+						go func() {
+							sendSms("15921709039", "console页面报错")
+						}()
+					}
 				} else {
-					fmt.Println("页面出错")
+					fmt.Println("服务器出错")
 					go func() {
-						sendSms("15921709039", "console页面报错")
+						sendSms("15921709039", "console服务报错")
 					}()
 				}
-			} else {
-				fmt.Println("服务器出错")
-				go func() {
-					sendSms("15921709039", "console服务报错")
-				}()
+				fmt.Printf("ticked at %v", time.Now())
 			}
-			fmt.Printf("ticked at %v", time.Now())
 		}
 	}()
 
@@ -115,15 +121,22 @@ func main() {
 		//	HTMLContentType: "application/xhtml+xml",     // Output XHTML content type instead of default "text/html"
 	}))
 	m.Use(func(c martini.Context, log *log.Logger, res http.ResponseWriter, req *http.Request) {
-		log.Println("before a request")
+		//	log.Println("before a request")
 
 		fmt.Println(martini.Env)
 		c.Next()
 
-		log.Println("after a request")
+		//	log.Println("after a request")
 	})
-	m.Get("/", func() string {
-		return "Hello world"
+	m.Get("/opt/console", func() string {
+		if isConsole {
+			isConsole = false
+			consoleStatus = "console close"
+		} else {
+			isConsole = true
+			consoleStatus = "console open"
+		}
+		return consoleStatus
 	})
 
 	m.Get("/timeout", func(req *http.Request, r render.Render) {
@@ -216,7 +229,7 @@ func main() {
 			}
 		}
 		//fmt.Println(resultStatus)
-		r.HTML(200, "opt", map[string]interface{}{"envs": envs, "log": string(logData)})
+		r.HTML(200, "opt", map[string]interface{}{"console_status": consoleStatus, "envs": envs, "log": string(logData)})
 	})
 	m.Get("/opt/config", func(req *http.Request, r render.Render) {
 		//queryForm, _ := url.ParseQuery(req.URL.RawQuery)
@@ -339,17 +352,40 @@ func main() {
 		r.Delete("/delete", getBooks)
 	})
 
-	m.Get("/test", func(res http.ResponseWriter, req *http.Request) {
-		res.WriteHeader(200)
+	m.Post("/sendMsg", sendMsg)
+	m.Get("/", func() string {
+		return "it is working!"
 	})
 	m.Get("/hello/:name", func(params martini.Params) string {
 		return "Hello " + params["name"]
+	})
+
+	m.Post("/runload", func(w http.ResponseWriter, r *http.Request) {
+
+		/*if err != nil {
+				w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+		    for _, payload := range content.Payloads {
+
+		        // let's create a job with the payload
+		        work := Job{Payload: payload}
+
+		        // Push the work onto the queue.
+		        JobQueue <- work
+		    }
+		*/
+		w.WriteHeader(http.StatusOK)
 	})
 	m.NotFound(func(res http.ResponseWriter) string {
 		res.WriteHeader(404)
 		return "noFound"
 	})
-
+	go func() {
+		log.Println(http.ListenAndServe(":8401", nil))
+	}()
 	m.RunOnAddr(":" + *port)
 }
 

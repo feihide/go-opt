@@ -18,6 +18,7 @@ import (
 	"github.com/KenmyZhang/aliyun-communicate"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -64,6 +65,8 @@ var isConsole = false
 var consoleStatus = "console close"
 
 func main() {
+	fmt.Println("可用CPU", runtime.NumGoroutine())
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	//	sendSms("15921709039", "xxxx")
 	//	sendSms("15921709039", "xxxx")
 	//	sendSms("15921709039", "xxxx2")

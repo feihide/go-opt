@@ -6,36 +6,58 @@ TODO:
 
 **/
 
-/*curl -XPOST -d '{
-    "timestamp": 12233445533,"data": [{ "user_id": 1,"msg": "http://www.google.com" },
+/*
+curl -H "Content-Type:application/json" -XPOST -d'{"timestamp":12233445533,"data":[{"user_id":5,"msg":"http://www.baidu.com"}]}'  http://127.0.0.1:8400/sendMsg
+
+
+ go-torch -u http://127.0.0.1:8401 -t 30
+
+ ./go-wrk/go-wrk -c 100 -t=10 -n=1000 -b='{
+    "timestamp": 12233445533,
+    "data": [
+        {
+            "user_id": 1,
+            "msg": "http://www.google.com"
+        },
         {
             "user_id": 2,
             "msg": "http://www.baidu.com"
-        }
-    ]
-}'  http://127.0.0.1:8400/sendMsg
- go-torch -u http://127.0.0.1:8401 -t 30
- go-wrk -c=400 -t=8 -n=100000 -m="POST" -b='xxxxxx'   http://127.0.0.1:8400/sendMsg
+        },
+        {
+            "user_id": 3,
+            "msg": "http://www.baidu.com"
+        },
+        {
+            "user_id": 4,
+            "msg": "http://www.baidu.com"
+        },
+        {
+            "user_id": 5,
+            "msg": "http://www.baidu.com"
+          }]}' -m="POST"  http://127.0.0.1:8400/sendMsg?timeout=0
 
 */
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"runtime"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
 var (
-    initWorker=4
-	MaxWorker =100 
-	MaxQueue  = 20
-	SendMsg   = 0
-	GetMsg    = 0
+	InitWorker   = 4
+	MaxWorker    = 100
+	MaxLoadWorks = 10 //每个工人最大负荷量，超出自动加人
+	MaxQueue     = 20
 )
+var SendMsg uint64 = 0
+var GetMsg uint64 = 0
 
 type MsgCollection struct {
 	Timestamp int   `json:"timestamp"`
@@ -48,8 +70,9 @@ type Msg struct {
 }
 
 type Job struct {
-	ID      int
+	ID      uint64
 	Msg     Msg
+	Wait    *sync.WaitGroup
 	TimeOut int
 }
 
@@ -74,16 +97,21 @@ func NewWorker(id int, workerPool chan chan Job) Worker {
 type Dispatcher struct {
 	WorkerPool   chan chan Job
 	WorkerNumber int
+	InitWorker   int
+	MaxWorker    int
+	WorkerGroup  []Worker
 }
 
-func NewDispatcher(maxWorkers int,initWorkers int) *Dispatcher {
-	pool := make(chan chan Job, maxWorkers)
-	return &Dispatcher{WorkerPool: pool, WorkerNumber: initWorkers}
+func NewDispatcher(MaxWorkers int, initWorkers int) *Dispatcher {
+	pool := make(chan chan Job, MaxWorkers)
+	//group := [MaxWorker]Worker{}
+	group := make([]Worker, MaxWorkers)
+	return &Dispatcher{WorkerPool: pool, WorkerNumber: 0, MaxWorker: MaxWorkers, InitWorker: initWorkers, WorkerGroup: group}
 }
 
 func initQueue() {
 	JobQueue = make(chan Job, MaxQueue) //定义接收队列最大容量
-	dispatcher := NewDispatcher(MaxWorker,initWorker)
+	dispatcher := NewDispatcher(MaxWorker, InitWorker)
 	dispatcher.Run()
 	log.Println("initqueue finish")
 }
@@ -94,25 +122,29 @@ func sendMsg(w http.ResponseWriter, r *http.Request) string {
 	var content = &MsgCollection{}
 	body, _ := ioutil.ReadAll(r.Body)
 
-	//fmt.Println(string(body))
-
 	err := json.Unmarshal(body, &content)
 
 	if err != nil {
+		log.Println("parse error:", err)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusBadRequest)
 		return "failed"
 	}
+	var waitgroup = new(sync.WaitGroup)
+
 	contentString, _ := json.Marshal(content)
-	fmt.Println(string(contentString))
+	//
+	log.Println(string(contentString))
 	for _, msg := range content.Msgs {
-		SendMsg++
-		work := Job{ID: SendMsg, Msg: msg, TimeOut: timeout}
+		atomic.AddUint64(&SendMsg, 1)
+
+		waitgroup.Add(1)
+		work := Job{ID: SendMsg, Msg: msg, TimeOut: timeout, Wait: waitgroup}
 		JobQueue <- work
 	}
-
+	waitgroup.Wait()
 	w.WriteHeader(http.StatusOK)
-	log.Println("sendMsg:" + strconv.Itoa(SendMsg) + "  GetMsg:" + strconv.Itoa(GetMsg))
+	log.Printf("sendMsg:%d, GetMsg: %d ", SendMsg, GetMsg)
 	return "ok"
 }
 
@@ -123,12 +155,12 @@ func (w Worker) Start() {
 			log.Printf("worker: %d ready", w.ID)
 			select {
 			case job := <-w.JobChannel:
-				GetMsg++
+				atomic.AddUint64(&GetMsg, 1)
+
 				//timeChan:=<-time.After(10 * time.Second):
 				time.Sleep(time.Second * time.Duration(job.TimeOut))
 				log.Println("worker:", w.ID, "| jobID:", job.ID, "|content:", job.Msg.Content)
-
-				log.Printf("leave num: %d", SendMsg-GetMsg)
+				job.Wait.Done()
 			case <-w.quit:
 				return
 			}
@@ -143,24 +175,51 @@ func (w Worker) Stop() {
 }
 
 func (d *Dispatcher) Run() {
-	for i := 0; i < d.WorkerNumber; i++ {
-		worker := NewWorker(i+1, d.WorkerPool)
-		worker.Start()
+	for i := 0; i < d.MaxWorker; i++ {
+		d.WorkerGroup[i] = NewWorker(i, d.WorkerPool)
+		if d.WorkerNumber < d.InitWorker {
+			d.WorkerGroup[i].Start()
+			d.WorkerNumber++
+		}
 		//	worker.Stop()
 	}
 	go d.dispatch()
 }
 
 func (d *Dispatcher) dispatch() {
+	//initGoroutine := runtime.NumGoroutine()
+	log.Printf("init NumGoroutine: %d\n", runtime.NumGoroutine())
 	for {
+
 		select {
 		case job := <-JobQueue:
-			//通过启动无数goruntine 来接收数据，可能存在蹦
+			//通过限制go 数量，发起阻塞
+			log.Printf("NumGoroutine: %d\n", runtime.NumGoroutine())
 			go func(job Job) {
 				jobChannel := <-d.WorkerPool
 				jobChannel <- job
 				log.Printf("dispatch job:%d", job.ID)
 			}(job)
+			//根据当前等待消息数 去增加worker
+
+			if SendMsg-GetMsg > uint64(d.WorkerNumber*MaxLoadWorks) && d.WorkerNumber < d.MaxWorker {
+				log.Printf("overload works,add workers,waitMsg: %d", SendMsg-GetMsg)
+				d.WorkerGroup[d.WorkerNumber].Start()
+				d.WorkerNumber++
+				log.Printf("worker num:%d", d.WorkerNumber)
+			}
 		}
+		if SendMsg-GetMsg < uint64(d.InitWorker*MaxLoadWorks) && d.WorkerNumber > d.InitWorker {
+			log.Printf("decrease workernumber")
+			for {
+				log.Printf("stop worker:%d", d.WorkerNumber)
+				d.WorkerGroup[d.WorkerNumber-1].Stop()
+				d.WorkerNumber--
+				if d.WorkerNumber == d.InitWorker {
+					break
+				}
+			}
+		}
+
 	}
 }

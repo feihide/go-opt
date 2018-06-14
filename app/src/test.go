@@ -7,12 +7,34 @@ TODO:
 **/
 
 /*
-curl -H "Content-Type:application/json" -XPOST -d'{"timestamp":12233445533,"data":[{"user_id":5,"msg":"http://www.baidu.com"}]}'  http://127.0.0.1:8400/sendMsg
+curl -H "Content-Type:application/json" -XPOST -d'{
+	 "timestamp": 12233445533,
+	 "data": [
+			 {
+					 "user_id": 1,
+					 "msg": "http://www.google.com"
+			 },
+			 {
+					 "user_id": 2,
+					 "msg": "http://www.baidu.com"
+			 },
+			 {
+					 "user_id": 3,
+					 "msg": "http://www.baidu.com"
+			 },
+			 {
+					 "user_id": 4,
+					 "msg": "http://www.baidu.com"
+			 },
+			 {
+					 "user_id": 5,
+					 "msg": "http://www.baidu.com"
+				 }]}'  http://127.0.0.1:8400/sendMsg?timeout=2&asyn=1
 
 
  go-torch -u http://127.0.0.1:8401 -t 30
 
- ./go-wrk/go-wrk -c 100 -t=10 -n=1000 -b='{
+ ./go-wrk/go-wrk -c 10 -t=10 -n=10 -b='{
     "timestamp": 12233445533,
     "data": [
         {
@@ -34,7 +56,7 @@ curl -H "Content-Type:application/json" -XPOST -d'{"timestamp":12233445533,"data
         {
             "user_id": 5,
             "msg": "http://www.baidu.com"
-          }]}' -m="POST"  http://127.0.0.1:8400/sendMsg?timeout=0
+          }]}' -m="POST"  http://127.0.0.1:8400/sendMsg?timeout=1
 
 */
 
@@ -118,7 +140,18 @@ func initQueue() {
 
 func sendMsg(w http.ResponseWriter, r *http.Request) string {
 	timeout, _ := strconv.Atoi(r.FormValue("timeout"))
+	timeout = 1
+	//默认同步
+	asyn, _ := strconv.Atoi(r.FormValue("asyn"))
 	log.Println("timeout:", timeout)
+	log.Println("asyn:", asyn)
+	//通过限制go 数量，发起阻塞
+	log.Printf("Current NumGoroutine: %d\n", runtime.NumGoroutine())
+	if runtime.NumGoroutine() > 1000 {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusBadRequest)
+		return "server is busy,please wait"
+	}
 	var content = &MsgCollection{}
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -127,9 +160,10 @@ func sendMsg(w http.ResponseWriter, r *http.Request) string {
 	if err != nil {
 		log.Println("parse error:", err)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(503)
 		return "failed"
 	}
+
 	var waitgroup = new(sync.WaitGroup)
 
 	contentString, _ := json.Marshal(content)
@@ -139,12 +173,15 @@ func sendMsg(w http.ResponseWriter, r *http.Request) string {
 		atomic.AddUint64(&SendMsg, 1)
 
 		waitgroup.Add(1)
+
 		work := Job{ID: SendMsg, Msg: msg, TimeOut: timeout, Wait: waitgroup}
 		JobQueue <- work
 	}
-	waitgroup.Wait()
+	if asyn == 0 {
+		waitgroup.Wait()
+	}
 	w.WriteHeader(http.StatusOK)
-	log.Printf("sendMsg:%d, GetMsg: %d ", SendMsg, GetMsg)
+
 	return "ok"
 }
 
@@ -161,6 +198,7 @@ func (w Worker) Start() {
 				time.Sleep(time.Second * time.Duration(job.TimeOut))
 				log.Println("worker:", w.ID, "| jobID:", job.ID, "|content:", job.Msg.Content)
 				job.Wait.Done()
+				log.Printf("sendMsg:%d, GetMsg: %d ", atomic.LoadUint64(&SendMsg), atomic.LoadUint64(&GetMsg))
 			case <-w.quit:
 				return
 			}
@@ -193,8 +231,7 @@ func (d *Dispatcher) dispatch() {
 
 		select {
 		case job := <-JobQueue:
-			//通过限制go 数量，发起阻塞
-			log.Printf("NumGoroutine: %d\n", runtime.NumGoroutine())
+
 			go func(job Job) {
 				jobChannel := <-d.WorkerPool
 				jobChannel <- job

@@ -157,7 +157,7 @@ func main() {
 	})
 	m.Get("/opt", func(r render.Render) {
 		envs := []Env{{"dev", "开发环境", 1, "", ""}, {"test", "测试环境", 1, "", ""}, {"product", "生产环境", 2, "", ""}}
-		logData, _ := ioutil.ReadFile("log.txt")
+		logData, _ := ioutil.ReadFile("/work/update_log.txt")
 		checkUrl := map[string]string{"dev-pc": "http://devwww.kunlunhealth.com.cn", "dev-wechat": "http://devwechat.kunlunhealth.com.cn", "test-pc": "http://testwww.kunlunhealth.com.cn", "test-wechat": "http://testm.kunlunhealth.com.cn", "product-pc": "https://www.kunlunhealth.com.cn", "product-wechat": "https://m.kunlunhealth.com.cn"}
 		result := make(chan string, 10)
 		quit := make(chan int)
@@ -317,8 +317,9 @@ func main() {
 				} else {
 					data = "更新成功"
 				}
-				comm := "sed  -i \"1i\\ `date`  opt:" + name + " result:" + data + " \r\"  log.txt"
+				comm := "echo \" `date`  opt:" + name + " result:" + data + "\"  >> /work/update_log.txt"
 				//写入日志
+				fmt.Println("runcomd:" + comm)
 				execCmd(comm)
 				//run := "echo \" `date`  " + ret + " \"  >> runtime.txt"
 				//execCmd(run)

@@ -176,7 +176,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+sed  -i "1i\ `date` 1111111 \r\"  log.txt
 	go func() {
 		t := time.Now()
 		genesisBlock := Block{}

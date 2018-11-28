@@ -245,6 +245,28 @@ func main() {
 
 	running := map[string]bool{"dev-front": false, "dev-java": false, "test-front": false, "test-java": false, "product-front": false, "proudct-java": false}
 
+	m.Post("/opt/dumpdb", func(w http.ResponseWriter, req *http.Request, r render.Render) {
+		name := req.PostFormValue("name")
+		pwd := req.PostFormValue("pwd")
+		if pwd != "feihide" {
+			r.JSON(200, map[string]interface{}{"result": "无权限操作"})
+		} else {
+			command := "/work/kl/bin/auto.sh " + name + "-front db_backup"
+
+			ret, err := execCmd(command)
+
+			fmt.Println(ret)
+			data := ""
+			if err != nil {
+				data = "备份失败"
+			} else {
+				data = "备份成功"
+			}
+
+			r.JSON(200, map[string]interface{}{"result": data})
+		}
+	})
+
 	m.Post("/opt/changeconfig", func(w http.ResponseWriter, req *http.Request, r render.Render) {
 		name := req.PostFormValue("name")
 		pwd := req.PostFormValue("pwd")
@@ -434,7 +456,7 @@ func sendSms(mobile string, msg string) (string, error) {
 }
 
 func execCmd(command string) (string, error) {
-
+	fmt.Println("run cmd ", command)
 	cmd := exec.Command("sh", "-c", command)
 	fmt.Println("exec:", cmd.Args)
 	buf, err := cmd.Output()

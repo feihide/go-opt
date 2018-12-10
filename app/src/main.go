@@ -32,8 +32,9 @@ const (
 )
 
 const (
-	test_pwd    string = "testtest"
-	product_pwd string = "feihide"
+	dev_pwd    string = "kl-dev-devops"
+	test_pwd    string = "kl-test-devops"
+	product_pwd string = "kl-feihide"
 )
 
 //MARTINI_ENV=production
@@ -248,10 +249,10 @@ func main() {
 	m.Post("/opt/dumpdb", func(w http.ResponseWriter, req *http.Request, r render.Render) {
 		name := req.PostFormValue("name")
 		pwd := req.PostFormValue("pwd")
-		if pwd != "feihide" {
+		if pwd != product_pwd {
 			r.JSON(200, map[string]interface{}{"result": "无权限操作"})
 		} else {
-			command := "/work/kl/bin/auto.sh " + name + "-front db_backup"
+			command := "/work/kl/bin/auto_git.sh " + name + "-front db_backup"
 
 			ret, err := execCmd(command)
 
@@ -298,7 +299,7 @@ func main() {
 		tmp := strings.Split(name, "-")
 		isAllow := 0
 		if tmp[0] == "dev" {
-			if pwd == "kldev" {
+			if pwd == dev_pwd  {
 				isAllow = 1
 			}
 		}
@@ -325,10 +326,10 @@ func main() {
 				//执行cmd命令: ls -l
 				command := "cd /work/kl/bin"
 				if num == 1 {
-					command += "&&./auto.sh " + req.PostFormValue("name") + " update"
+					command += "&&./auto_git.sh " + req.PostFormValue("name") + " update"
 				} else {
 					for i := 1; i < num+1; i++ {
-						command += "&&./auto.sh " + req.PostFormValue("name") + strconv.Itoa(i) + " update"
+						command += "&&./auto_git.sh " + req.PostFormValue("name") + strconv.Itoa(i) + " update"
 					}
 				}
 				//commandTest := "sleep 3&& echo 'fk'"

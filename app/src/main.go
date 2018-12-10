@@ -32,7 +32,7 @@ const (
 )
 
 const (
-	dev_pwd    string = "kl-dev-devops"
+	dev_pwd     string = "kl-dev-devops"
 	test_pwd    string = "kl-test-devops"
 	product_pwd string = "kl-feihide"
 )
@@ -299,7 +299,7 @@ func main() {
 		tmp := strings.Split(name, "-")
 		isAllow := 0
 		if tmp[0] == "dev" {
-			if pwd == dev_pwd  {
+			if pwd == dev_pwd {
 				isAllow = 1
 			}
 		}

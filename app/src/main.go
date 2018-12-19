@@ -29,6 +29,7 @@ const (
 	Dev  string = "development"
 	Prod string = "production"
 	Test string = "test"
+    Port string = 8040
 )
 
 const (
@@ -109,9 +110,9 @@ func main() {
 		}
 	}()
 
-	port := flag.String("port", "8400", "port number")
-	flag.Parse()
-	fmt.Println("启用端口:", *port)
+	//port := flag.String("port", "8400", "port number")
+	//flag.Parse()
+	fmt.Println("启用端口:", Port)
 	m := martini.Classic()
 	m.Use(martini.Static("../assets"))
 	m.Use(render.Renderer(render.Options{
@@ -413,7 +414,7 @@ func main() {
 	go func() {
 		log.Println(http.ListenAndServe(":8401", nil))
 	}()
-	m.RunOnAddr(":" + *port)
+	m.RunOnAddr(":" + Port)
 }
 
 func sendSms(mobile string, msg string) (string, error) {

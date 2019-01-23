@@ -6,7 +6,7 @@ import "github.com/martini-contrib/render"
 import (
 	"bufio"
 	"encoding/json"
-	"flag"
+	//	"flag"
 	"fmt"
 	"html/template"
 	"io"
@@ -29,12 +29,13 @@ const (
 	Dev  string = "development"
 	Prod string = "production"
 	Test string = "test"
-    Port string = 8040
+	Port string = "8040"
 )
 
 const (
 	dev_pwd     string = "kl-dev-devops"
 	test_pwd    string = "kl-test-devops"
+	pre_pwd     string = "kl-pre-devops"
 	product_pwd string = "kl-feihide"
 )
 
@@ -51,7 +52,6 @@ type Env struct {
 	Title  string
 	Number int
 	Pc     template.HTML
-	Wechat template.HTML
 }
 
 type ResData struct {
@@ -69,9 +69,10 @@ var consoleStatus = "console close"
 func main() {
 	fmt.Println("可用CPU", runtime.NumGoroutine())
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	//	sendSms("15921709039", "xxxx")
-	//	sendSms("15921709039", "xxxx")
+	running := map[string]bool{"dev": false, "test": false, "pre": false, "proudct": false}
+	envs := []Env{{"dev", "开发环境", 1, ""}, {"test", "测试环境", 1, ""}, {"pre", "预发布环境", 1, ""}, {"product", "生产环境", 3, ""}}
 	//	sendSms("15921709039", "xxxx2")
+
 	ticker := time.NewTicker(time.Minute * 5)
 	initQueue()
 	go func() {
@@ -80,7 +81,7 @@ func main() {
 		for _ = range ticker.C {
 			if isConsole {
 				Client := http.Client{Timeout: t}
-				req, err := http.NewRequest("GET", "http://127.0.0.1:8400/opt", nil)
+				req, err := http.NewRequest("GET", "http://127.0.0.1:"+Port+"/opt", nil)
 				if err != nil {
 					panic(err)
 				}
@@ -158,9 +159,8 @@ func main() {
 		r.Text(200, "hello,timeout :"+out)
 	})
 	m.Get("/opt", func(r render.Render) {
-		envs := []Env{{"dev", "开发环境", 1, "", ""}, {"test", "测试环境", 1, "", ""}, {"product", "生产环境", 2, "", ""}}
 		logData, _ := ioutil.ReadFile("/work/update_log.txt")
-		checkUrl := map[string]string{"dev-pc": "http://devwww.kunlunhealth.com.cn", "dev-wechat": "http://devwechat.kunlunhealth.com.cn", "test-pc": "http://testwww.kunlunhealth.com.cn", "test-wechat": "http://testm.kunlunhealth.com.cn", "product-pc": "https://www.kunlunhealth.com.cn", "product-wechat": "https://m.kunlunhealth.com.cn"}
+		checkUrl := map[string]string{"dev-pc": "http://devwww.kunlunhealth.com.cn", "test-pc": "http://testwww.kunlunhealth.com.cn", "pre-pc": "http://prewww.kunlunhealth.com.cn", "product-pc": "https://www.kunlunhealth.com.cn"}
 		result := make(chan string, 10)
 		quit := make(chan int)
 		//总并发超时时间
@@ -225,17 +225,11 @@ func main() {
 				go sendSms("15921709039", item.Name+"-pc")
 				envs[n].Pc = template.HTML("<font color='red'>异常[耗时:" + resultStatus[item.Name+"-pc"].Duartion + "</font>")
 			}
-			if resultStatus[item.Name+"-wechat"].Ok {
-				content := "正常[耗时:" + resultStatus[item.Name+"-wechat"].Duartion
-				envs[n].Wechat = template.HTML("<font color='green'>" + content + "</font>")
-			} else {
-				go sendSms("15921709039", item.Name+"-wechat")
-				envs[n].Wechat = template.HTML("<font color='#FF0000'>异常[耗时:" + resultStatus[item.Name+"-wechat"].Duartion + "</font>")
-			}
 		}
 		//fmt.Println(resultStatus)
 		r.HTML(200, "opt", map[string]interface{}{"console_status": consoleStatus, "envs": envs, "log": string(logData)})
 	})
+
 	m.Get("/opt/config", func(req *http.Request, r render.Render) {
 		//queryForm, _ := url.ParseQuery(req.URL.RawQuery)
 		name := req.FormValue("name")
@@ -243,30 +237,6 @@ func main() {
 		dat, err := ioutil.ReadFile("/work/kl/bin/" + name + "_export.cnf")
 		check(err)
 		r.JSON(200, map[string]interface{}{"result": string(dat)})
-	})
-
-	running := map[string]bool{"dev-front": false, "dev-java": false, "test-front": false, "test-java": false, "product-front": false, "proudct-java": false}
-
-	m.Post("/opt/dumpdb", func(w http.ResponseWriter, req *http.Request, r render.Render) {
-		name := req.PostFormValue("name")
-		pwd := req.PostFormValue("pwd")
-		if pwd != product_pwd {
-			r.JSON(200, map[string]interface{}{"result": "无权限操作"})
-		} else {
-			command := "/work/kl/bin/auto_git.sh " + name + "-front db_backup"
-
-			ret, err := execCmd(command)
-
-			fmt.Println(ret)
-			data := ""
-			if err != nil {
-				data = "备份失败"
-			} else {
-				data = "备份成功"
-			}
-
-			r.JSON(200, map[string]interface{}{"result": data})
-		}
 	})
 
 	m.Post("/opt/changeconfig", func(w http.ResponseWriter, req *http.Request, r render.Render) {
@@ -296,8 +266,14 @@ func main() {
 		//fmt.Fprintln(w, req.PostFormValue("name"))
 		name := req.PostFormValue("name")
 		pwd := req.PostFormValue("pwd")
-		num, _ := strconv.Atoi(req.PostFormValue("num"))
 		tmp := strings.Split(name, "-")
+		num := 0
+		for _, item := range envs {
+			if item.Name == tmp[0] {
+				num = item.Number
+				fmt.Println("getNum:" + strconv.Itoa(num))
+			}
+		}
 		isAllow := 0
 		if tmp[0] == "dev" {
 			if pwd == dev_pwd {
@@ -309,6 +285,11 @@ func main() {
 				isAllow = 1
 			}
 		}
+		if tmp[0] == "pre" {
+			if pwd == pre_pwd {
+				isAllow = 1
+			}
+		}
 		if tmp[0] == "product" {
 			if pwd == product_pwd {
 				isAllow = 1
@@ -317,25 +298,32 @@ func main() {
 
 		var data string
 		if isAllow == 0 {
-			data = "无权更新"
+			data = "无权执行相关操作"
 		} else {
-			if running[name] == false {
-				running[name] = true
-				fmt.Println(running)
+			if running[tmp[0]] == false {
+				running[tmp[0]] = true
 				//command := "ls"
 				//params := []string{"-l"}
 				//执行cmd命令: ls -l
 				command := "cd /work/kl/bin"
 				if num == 1 {
-					command += "&&./auto_git.sh " + req.PostFormValue("name") + " update"
+					command += "&&./new_auto.sh " + tmp[0] + " " + tmp[1] + "_" + tmp[2]
 				} else {
 					for i := 1; i < num+1; i++ {
-						command += "&&./auto_git.sh " + req.PostFormValue("name") + strconv.Itoa(i) + " update"
+						if tmp[1] == "data" {
+							break
+						}
+						//只有当product才重启middle
+						if tmp[1] == "middle" && i != 2 {
+							break
+						}
+						command += "&&./new_auto.sh " + tmp[0] + strconv.Itoa(i) + " " + tmp[1] + "_" + tmp[2]
 					}
 				}
 				//commandTest := "sleep 3&& echo 'fk'"
 				ret, err := execCmd(command)
 				fmt.Println(ret)
+				running[tmp[0]] = false
 				if err != nil {
 					data = "更新失败"
 				} else {
@@ -343,14 +331,13 @@ func main() {
 				}
 				comm := "echo \" `date`  opt:" + name + " result:" + data + "\"  >> /work/update_log.txt"
 				//写入日志
-				fmt.Println("runcomd:" + comm)
+			//	fmt.Println("runcomd:" + comm)
 				execCmd(comm)
 				//run := "echo \" `date`  " + ret + " \"  >> runtime.txt"
 				//execCmd(run)
-				running[name] = false
 			} else {
 				fmt.Println("block")
-				data = "执行更新中"
+				data = "操作执行中，请稍后再试"
 			}
 		}
 		r.JSON(200, map[string]interface{}{"result": data})
@@ -381,8 +368,9 @@ func main() {
 	})
 
 	m.Post("/sendMsg", sendMsg)
-	m.Get("/", func() string {
-		return "it is working!"
+	m.Get("/", func(r render.Render) {
+		r.HTML(200, "index", "test")
+		//return "it is working!"
 	})
 	m.Get("/hello/:name", func(params martini.Params) string {
 		return "Hello " + params["name"]
@@ -411,9 +399,9 @@ func main() {
 		res.WriteHeader(404)
 		return "noFound"
 	})
-	go func() {
-		log.Println(http.ListenAndServe(":8401", nil))
-	}()
+	//	go func() {
+	//		log.Println(http.ListenAndServe(":8401", nil))
+	//	}()
 	m.RunOnAddr(":" + Port)
 }
 

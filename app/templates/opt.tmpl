@@ -1,4 +1,7 @@
 <style type="text/css" >
+.body {
+    font-szie:20
+}
 .succ-pop{
     width: 400px;
     height: 300px;
@@ -13,29 +16,52 @@
     border:3px solid #000;
     display:none;
 } 
+button {
+    font-size:20}
+input {
+    font-size:20}
+.inner td{
+    border :10px
+}
 </style>
+<hr>
+<hr>
 <h2>ICTOP<h4> - 生命不息 运维不止, 欢迎来到昆仑健康智能运维平台</h4></h2>
 <h3>自动监控：{{.console_status}}
 <h3><input type="button"  value="手动刷新" id ="reload"></h3>
 <hr>
 <table border=1>
-<tr><th>env</th><th>front</th><th>end</th><th>pc</th><th>wechat</th><th>config</th></tr>
+<tr><th>env</th><th>cluster</th><th>pc</th><th>opt</th><th>config</th></tr>
  {{range $item := .envs}}
- <tr><td>{{ $item.Title }}</td><td>
- 集群:<span id="{{$item.Name}}-front-num">{{$item.Number}}</span>台
- <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-front">执行更新</button>
- <input type="password" id="{{$item.Name}}-front-pwd" placeholder="执行密码" />
+ <tr><td>{{ $item.Title }}</td>
+ <td>{{$item.Number}}</td>
+ <td>{{$item.Pc }}</td>
+ <td>
+ <table  width="600px" class="inner">
+ <tr><td>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-front-update">前端更新</button>
  </td>
  <td>
- 集群:<span id="{{.Name}}-java-num">{{$item.Number}}</span>台
- <button type="button"  style="border:1px solid #FF9933 ;"  id="{{ $item.Name }}-java">执行更新</button>
- <input type="password" id="{{$item.Name}}-java-pwd" placeholder="执行密码" /> 
- </td><td>{{$item.Pc }}</td><td>{{$item.Wechat}}</td>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-end-update">后端更新</button>
+ </td><td>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-data-restart">数据库重启</button>
+ </td><td>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-middle-restart">中间件重启</button>
+ </td></tr>
+ <tr><td>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-front-restart">前端重启</button>
+ </td><td>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-end-restart">后端重启</button>
+ </td><td>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-data-backup">数据库备份</button>
+ </td></tr>
+ </table>
+ <input type="password" id="{{$item.Name}}-pwd" placeholder="执行密码" />
+ </td>
  <td><span name="config" id="{{$item.Name}}">查看</span> | <span name="change_config" id="{{$item.Name}}">编辑</span></td><tr>
  {{end}}
 </table>
 <div class="succ-pop" id="change_div" >
-    <center>执行操作:<input type="button" id="backup" value="备份数据库"></center>
     <center><span>    密码: </span><span><input id="change_pwd" type="password"></span></center>
     <p><input id="change_name" type="hidden" ></p>
     <center><span>    内容: </span><span><textarea  id="change_content" style="width:300px; height:200px"></textarea></span></center>
@@ -47,8 +73,19 @@
 <p>操作历史</p>
 <pre>{{.log}}</pre>
 
-<script src="/js/jquery-3.2.1.min.js"></script>
+<script src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+<script type="text/javascript" src="js/layui.js"></script>
+<script type="text/javascript" src="js/treatment.js"></script>
 <script>
+$(document).ready(function(){
+    layui.use('layer', function () {
+
+    var root = getCookieValue("rootCode")
+        if(root!='devops'){
+        window.location.href="/"
+        }
+
 $("#reload").click(function(){
 window.location.reload()
 })
@@ -61,7 +98,7 @@ $("span[name='config']").bind("click",function(){
           name:name
       }
   }).done(function(msg){
-      alert(msg.result)  
+      ErroAlert(msg.result)  
      } );
 })
 $("span[name='change_config']").bind("click",function(){
@@ -79,23 +116,6 @@ $("span[name='change_config']").bind("click",function(){
      } );
 })
 
-$("#backup").click(function(){
-  $("#backup").val("备份中")
-  $("#backup").attr("disabled","disabled")
-  $.ajax({
-      url:"/opt/dumpdb",
-      method:"POST",
-      data:{
-          name:$("#change_name").val(),
-          pwd:$("#change_pwd").val(),
-          }
-  }).done(function(msg){
-      alert(msg.result)
-      $("#backup").removeAttr("disabled")
-      $("#backup").val("备份数据库")
-  })
-})
-    
 $("#change_ok").click(function(){
   $("#change_ok").val("更新中")
   $("#change_ok").attr("disabled","disabled")
@@ -108,7 +128,7 @@ $("#change_ok").click(function(){
           content:$("#change_content").val()
           }
   }).done(function(msg){
-      alert(msg.result)
+      ErroAlert(msg.result)
       $("#change_ok").removeAttr("disabled")
   $("#change_ok").val("确定")
       if(msg.result=="更新成功"){
@@ -122,23 +142,25 @@ $("#change_cancel").click(function(){
 })
 
 $("button").click(function(){  
-  $(this).html("更新中...")  
+    var title = $(this).html()
+  $(this).html("执行中...")  
   var name = $(this).attr('id')
+      tmp = name.split('-')
       $("#"+name).attr("disabled",true);  
   $.ajax({
       url:"/opt/run",
       method:"POST",
       data:{
-          name:$(this).attr('id'),
-          pwd:$("#"+name+"-pwd").val(),
-          num:$("#"+name+"-num").html()
+          name:name,
+          pwd:$("#"+tmp[0]+"-pwd").val(),
           }
   }).done(function(msg){
-      $("#"+name).html(msg.result)  
+      ErroAlert(msg.result)  
+      $("#"+name).html(title)
       $("#"+name).attr("disabled",false);  
      } );
 })
 
-$(document).ready(function(){
+    })
 })
 </script>

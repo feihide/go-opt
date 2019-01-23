@@ -30,11 +30,11 @@ input {
 <h3>自动监控：{{.console_status}}
 <h3><input type="button"  value="手动刷新" id ="reload"></h3>
 <hr>
-<table border=1>
+<table border=1 style="background-color:#333333">
 <tr><th>env</th><th>cluster</th><th>pc</th><th>opt</th><th>config</th></tr>
  {{range $item := .envs}}
  <tr><td>{{ $item.Title }}</td>
- <td>{{$item.Number}}</td>
+ <td><center>{{$item.Number}}</center></td>
  <td>{{$item.Pc }}</td>
  <td>
  <table  width="600px" class="inner">

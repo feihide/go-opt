@@ -23,6 +23,14 @@ input {
 .inner td{
     border :10px
 }
+.inner button{
+    margin-bottom:3px;
+    padding-bottom:3px;
+    margin-top:3px;
+    padding-top:3px;
+    padding-left:6px;
+    padding-right:6px;
+}
 </style>
 <hr>
 <hr>
@@ -37,24 +45,43 @@ input {
  <td><center>{{$item.Number}}</center></td>
  <td>{{$item.Pc }}</td>
  <td>
- <table  width="600px" class="inner">
- <tr><td>
+ <table  width="600px" border="1" class="inner">
+ <tr><th>前端</th><th>后端</th><th>存储</th><th>中间件</th></tr> 
+ <tr><th>
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-front-update">前端更新</button>
- </td>
- <td>
+ </th>
+ <th>
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-end-update">后端更新</button>
- </td><td>
+ </th><th>
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-data-restart">数据库重启</button>
- </td><td>
+ </th><th>
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-middle-restart">中间件重启</button>
- </td></tr>
- <tr><td>
+ </th></tr>
+ <tr><th>
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-front-restart">前端重启</button>
- </td><td>
+ </th><th>
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-end-restart">后端重启</button>
- </td><td>
+ </th><th>
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-data-backup">数据库备份</button>
- </td></tr>
+ </th></tr>
+ <tr>
+ <th>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-pc-update">官网更新</button>
+ </th>
+ <th></th><th></th><th></th>
+ </tr>
+ <tr>
+ <th>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-wechat-update">微信更新</button>
+ </th>
+ <th></th><th></th><th></th>
+ </tr>
+ <tr>
+ <th>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-admin-update">后台更新</button>
+ </th>
+ <th></th><th></th><th></th>
+ </tr>
  </table>
  <input type="password" id="{{$item.Name}}-pwd" placeholder="执行密码" />
  </td>

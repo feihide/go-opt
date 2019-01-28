@@ -1,6 +1,7 @@
 <style type="text/css" >
 .body {
-    font-szie:20
+    font-size:20;
+    overflow:scroll;
 }
 .succ-pop{
     width: 400px;
@@ -20,9 +21,16 @@ button {
     font-size:20}
 input {
     font-size:20}
+
 .inner td{
     border :10px
 }
+#opt { 
+   margin-left:20px;
+    overflow:scroll;
+    height: 700px;
+}
+
 .inner button{
     margin-bottom:3px;
     padding-bottom:3px;
@@ -32,6 +40,7 @@ input {
     padding-right:6px;
 }
 </style>
+<div id="opt">
 <hr>
 <hr>
 <h2>ICTOP<h4> - 生命不息 运维不止, 欢迎来到昆仑健康智能运维平台</h4></h2>
@@ -99,7 +108,7 @@ input {
 <hr>
 <p>操作历史</p>
 <pre>{{.log}}</pre>
-
+</div>
 <script src="js/jquery.min.js"></script>
 <script type="text/javascript" src="js/jquery-ui.min.js"></script>
 <script type="text/javascript" src="js/layui.js"></script>

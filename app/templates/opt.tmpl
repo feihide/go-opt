@@ -60,7 +60,7 @@ input {
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-front-update">前端更新</button>
  </th>
  <th>
- <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-end-update">后端更新</button>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-end-update">JAVA更新</button>
  </th><th>
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-data-restart">数据库重启</button>
  </th><th>
@@ -69,7 +69,7 @@ input {
  <tr><th>
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-front-restart">前端重启</button>
  </th><th>
- <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-end-restart">后端重启</button>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-end-restart">JAVA重启</button>
  </th><th>
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-data-backup">数据库备份</button>
  </th></tr>
@@ -83,13 +83,17 @@ input {
  <th>
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-wechat-update">微信更新</button>
  </th>
- <th></th><th></th><th></th>
+ <th>
+ <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-proxy-update">开放平台更新</button>
+ </th><th></th><th></th>
  </tr>
  <tr>
  <th>
  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-admin-update">后台更新</button>
  </th>
- <th></th><th></th><th></th>
+ <th>
+  <button type="button"  style="border:1px solid #FF9933 ;" id="{{$item.Name}}-proxy-restart">开放平台重启</button>
+</th><th></th><th></th>
  </tr>
  </table>
  <input type="password" id="{{$item.Name}}-pwd" placeholder="执行密码" />

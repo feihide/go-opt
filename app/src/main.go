@@ -70,7 +70,7 @@ func main() {
 	fmt.Println("可用CPU", runtime.NumGoroutine())
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	running := map[string]bool{"dev": false, "test": false, "pre": false, "proudct": false}
-	envs := []Env{{"dev", "开发环境", 1, ""}, {"test", "测试环境", 1, ""}, {"pre", "预发布环境", 1, ""}, {"product", "生产环境", 3, ""}}
+	envs := []Env{{"dev", "开发环境", 1, ""}, {"test", "测试环境", 1, ""}, {"pre", "预发布环境", 1, ""}, {"product", "生产环境", 4, ""}}
 	//	sendSms("15921709039", "xxxx2")
 
 	ticker := time.NewTicker(time.Minute * 5)
@@ -331,7 +331,7 @@ func main() {
 				}
 				comm := "echo \" `date`  opt:" + name + " result:" + data + "\"  >> /work/update_log.txt"
 				//写入日志
-			//	fmt.Println("runcomd:" + comm)
+				//	fmt.Println("runcomd:" + comm)
 				execCmd(comm)
 				//run := "echo \" `date`  " + ret + " \"  >> runtime.txt"
 				//execCmd(run)

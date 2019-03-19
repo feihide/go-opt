@@ -98,7 +98,7 @@ input {
  </table>
  <input type="password" id="{{$item.Name}}-pwd" placeholder="执行密码" />
  </td>
- <td><span name="config" id="{{$item.Name}}">查看</span> | <span name="change_config" id="{{$item.Name}}">编辑</span></td><tr>
+ <td><span><a style="color: #FFF;" href="{{$item.Api}}/platform/flushConfig" target="_blank">刷新服务器配置</a></span> | <span name="config" id="{{$item.Name}}">查看</span> | <span name="change_config" id="{{$item.Name}}">编辑</span></td><tr>
  {{end}}
 </table>
 <div class="succ-pop" id="change_div" >

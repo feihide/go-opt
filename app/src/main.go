@@ -52,6 +52,7 @@ type Env struct {
 	Title  string
 	Number int
 	Pc     template.HTML
+	Api    string
 }
 
 type ResData struct {
@@ -70,7 +71,7 @@ func main() {
 	fmt.Println("可用CPU", runtime.NumGoroutine())
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	running := map[string]bool{"dev": false, "test": false, "pre": false, "proudct": false}
-	envs := []Env{{"dev", "开发环境", 1, ""}, {"test", "测试环境", 1, ""}, {"pre", "预发布环境", 1, ""}, {"product", "生产环境", 4, ""}}
+	envs := []Env{{"dev", "开发环境", 1, "", "http://devapi.kunlunhealth.com.cn"}, {"test", "测试环境", 1, "", "http://testapi.kunlunhealth.com.cn"}, {"pre", "预发布环境", 1, "", "http://preapi.kunlunhealth.com.cn"}, {"product", "生产环境", 4, "", "https://api.kunlunhealth.com.cn"}}
 	//	sendSms("15921709039", "xxxx2")
 
 	ticker := time.NewTicker(time.Minute * 5)
@@ -86,6 +87,9 @@ func main() {
 					panic(err)
 				}
 				resp, er := Client.Do(req)
+				if resp != nil {
+					defer resp.Body.Close()
+				}
 				if er == nil && resp.StatusCode == 200 {
 					b, _ := ioutil.ReadAll(resp.Body)
 					html := "<html>"
@@ -177,6 +181,9 @@ func main() {
 				req, _ := http.NewRequest("GET", vv, nil)
 				beginTime := time.Now()
 				resp, er := Client.Do(req)
+				if resp != nil {
+					defer resp.Body.Close()
+				}
 
 				//defer resp.Body.Close()
 				var out ResData

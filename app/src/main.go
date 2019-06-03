@@ -1,4 +1,4 @@
-package main
+package main // import "github.com/feihide/go-opt/app"
 
 import "github.com/go-martini/martini"
 import "github.com/martini-contrib/render"

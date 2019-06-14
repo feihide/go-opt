@@ -36,6 +36,7 @@ const (
 	dev_pwd     string = "kl-dev-devops"
 	test_pwd    string = "kl-test-devops"
 	pre_pwd     string = "kl-pre-devops"
+	stg_pwd     string = "kl-stg-devops"
 	product_pwd string = "kl-feihide"
 )
 
@@ -45,6 +46,15 @@ func check(e error) {
 	if e != nil {
 		panic(e)
 	}
+}
+
+type SlbServer struct {
+	BackendServer []Server `json:"BackendServer"`
+}
+
+type Server struct {
+	ServerId string `json:"ServerId"`
+	Weight   string `json:"Weight"`
 }
 
 type Env struct {
@@ -71,7 +81,7 @@ func main() {
 	fmt.Println("可用CPU", runtime.NumGoroutine())
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	running := map[string]bool{"dev": false, "test": false, "pre": false, "proudct": false}
-	envs := []Env{{"dev", "开发环境", 1, "", "http://devapi.kunlunhealth.com.cn"}, {"test", "测试环境", 1, "", "http://testapi.kunlunhealth.com.cn"}, {"pre", "预发布环境", 1, "", "http://preapi.kunlunhealth.com.cn"}, {"product", "生产环境", 4, "", "https://api.kunlunhealth.com.cn"}}
+	envs := []Env{{"dev", "开发环境", 1, "", "http://devapi.kunlunhealth.com.cn"}, {"test", "测试环境", 1, "", "http://testapi.kunlunhealth.com.cn"}, {"pre", "预发布环境", 1, "", "http://preapi.kunlunhealth.com.cn"}, {"stg", "准生产环境", 1, "", "http://stgapi.kunlunhealth.com.cn"}, {"product", "生产环境", 3, "", "https://api.kunlunhealth.com.cn"}}
 	//	sendSms("15921709039", "xxxx2")
 
 	ticker := time.NewTicker(time.Minute * 5)
@@ -164,7 +174,7 @@ func main() {
 	})
 	m.Get("/opt", func(r render.Render) {
 		logData, _ := ioutil.ReadFile("/work/update_log.txt")
-		checkUrl := map[string]string{"dev-pc": "http://devwww.kunlunhealth.com.cn", "test-pc": "http://testwww.kunlunhealth.com.cn", "pre-pc": "http://prewww.kunlunhealth.com.cn", "product-pc": "https://www.kunlunhealth.com.cn"}
+		checkUrl := map[string]string{"dev-pc": "http://devwww.kunlunhealth.com.cn", "test-pc": "http://testwww.kunlunhealth.com.cn", "stg-pc": "http://stgwww.kunlunhealth.com.cn", "pre-pc": "http://prewww.kunlunhealth.com.cn", "product-pc": "https://www.kunlunhealth.com.cn"}
 		result := make(chan string, 10)
 		quit := make(chan int)
 		//总并发超时时间
@@ -233,8 +243,13 @@ func main() {
 				envs[n].Pc = template.HTML("<font color='red'>异常[耗时:" + resultStatus[item.Name+"-pc"].Duartion + "</font>")
 			}
 		}
+		res := getServerCall()
+		var slb SlbServer
+
+		_ = json.Unmarshal([]byte(res), &slb)
+		fmt.Printf("res= %", slb)
 		//fmt.Println(resultStatus)
-		r.HTML(200, "opt", map[string]interface{}{"console_status": consoleStatus, "envs": envs, "log": string(logData)})
+		r.HTML(200, "opt", map[string]interface{}{"console_status": consoleStatus, "envs": envs, "slb": slb.BackendServer, "log": string(logData)})
 	})
 
 	m.Get("/opt/config", func(req *http.Request, r render.Render) {
@@ -373,7 +388,8 @@ func main() {
 		r.Post("/add", getBooks)
 		r.Delete("/delete", getBooks)
 	})
-
+	m.Post("/aliyun/slbChange", slbChange)
+	m.Get("/aliyun/getServer", getServer)
 	m.Post("/sendMsg", sendMsg)
 	m.Get("/", func(r render.Render) {
 		r.HTML(200, "index", "test")

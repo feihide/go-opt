@@ -122,6 +122,20 @@ input {
  
 </div>
 <hr>
+<p>slb status</p>
+<table border=1 style="background-color:#333333">
+<tr><th>服务器ID</th>
+<th>服务权重</th>
+<th>当前状态</th>
+</tr>
+ {{range .slb}}
+ <tr><td>{{ .ServerId}}</td>
+ <td><center>{{.Weight}}</center></td>
+<td></td>
+</tr>
+ {{end}}
+</table>
+<hr>
 <p>操作历史</p>
 <pre>{{.log}}</pre>
 </div>

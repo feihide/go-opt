@@ -38,6 +38,7 @@ const (
 	pre_pwd     string = "kl-pre-devops"
 	stg_pwd     string = "kl-stg-devops"
 	product_pwd string = "kl-feihide"
+	slb_pwd     string = "feihide"
 )
 
 //MARTINI_ENV=production
@@ -55,6 +56,14 @@ type SlbServer struct {
 type Server struct {
 	ServerId string `json:"ServerId"`
 	Weight   string `json:"Weight"`
+}
+
+type SlbServerStatus struct {
+	BackendServer []ServerStatus `json:"BackendServer"`
+}
+type ServerStatus struct {
+	ServerId           string `json:"ServerId"`
+	ServerHealthStatus string `json:"ServerHealthStatus"`
 }
 
 type Env struct {
@@ -245,11 +254,12 @@ func main() {
 		}
 		res := getServerCall()
 		var slb SlbServer
-
 		_ = json.Unmarshal([]byte(res), &slb)
-		fmt.Printf("res= %", slb)
-		//fmt.Println(resultStatus)
-		r.HTML(200, "opt", map[string]interface{}{"console_status": consoleStatus, "envs": envs, "slb": slb.BackendServer, "log": string(logData)})
+		resStatus := getStatusCall()
+		var slbStatus SlbServerStatus
+		_ = json.Unmarshal([]byte(resStatus), &slbStatus)
+		fmt.Println(slbStatus.BackendServer)
+		r.HTML(200, "opt", map[string]interface{}{"console_status": consoleStatus, "envs": envs, "slb": slb.BackendServer, "status": slbStatus.BackendServer, "log": string(logData)})
 	})
 
 	m.Get("/opt/config", func(req *http.Request, r render.Render) {
@@ -267,7 +277,7 @@ func main() {
 		content := req.PostFormValue("content")
 		//fmt.Fprintln(w, req.PostFormValue("name"))
 		if pwd != "feihide" {
-			r.JSON(200, map[string]interface{}{"result": "无权限修改"})
+			r.JSON(200, map[string]interface{}{"result": "无权限执行"})
 		} else {
 			ioutil.WriteFile("/work/kl/bin/"+name+"_export.cnf", []byte(content), 0644)
 			command := "svn ci -m'自动更新配置！!!' /work/kl/bin/" + name + "_export.cnf"
@@ -283,7 +293,30 @@ func main() {
 			r.JSON(200, map[string]interface{}{"result": data})
 		}
 	})
+	m.Post("/opt/slbConfig", func(w http.ResponseWriter, req *http.Request, r render.Render) {
+		name := req.PostFormValue("name")
+		pwd := req.PostFormValue("pwd")
+		var data string
+		//var wg sync.WaitGroup
+		if pwd == slb_pwd {
+			if name == "alone" {
+				//	wg.Add(4)
+				slbChangeModCall("alone")
+			} else if name == "normal" {
+				//	wg.Add(4)
+				slbChangeModCall("normal")
+			} else {
+				tmp := strings.Split(name, "_")
+				slbChangeCall(tmp[0], tmp[1])
+			}
+			//wg.Wait()
+			data = "ok"
+		} else {
+			data = "无权执行"
+		}
+		r.JSON(200, map[string]interface{}{"result": data})
 
+	})
 	m.Post("/opt/run", func(w http.ResponseWriter, req *http.Request, r render.Render) {
 		//fmt.Fprintln(w, req.PostFormValue("name"))
 		name := req.PostFormValue("name")
@@ -312,6 +345,11 @@ func main() {
 				isAllow = 1
 			}
 		}
+		if tmp[0] == "stg" {
+			if pwd == stg_pwd {
+				isAllow = 1
+			}
+		}
 		if tmp[0] == "product" {
 			if pwd == product_pwd {
 				isAllow = 1
@@ -320,7 +358,7 @@ func main() {
 
 		var data string
 		if isAllow == 0 {
-			data = "无权执行相关操作"
+			data = "无权执行"
 		} else {
 			if running[tmp[0]] == false {
 				running[tmp[0]] = true
@@ -388,6 +426,7 @@ func main() {
 		r.Post("/add", getBooks)
 		r.Delete("/delete", getBooks)
 	})
+	m.Get("/aliyun/getStatus", getStatus)
 	m.Post("/aliyun/slbChange", slbChange)
 	m.Get("/aliyun/getServer", getServer)
 	m.Post("/sendMsg", sendMsg)

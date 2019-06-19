@@ -122,16 +122,37 @@ input {
  
 </div>
 <hr>
-<p>slb status</p>
+<p>生产均衡负载</p>
+<p>
+<input type="button"  name="slb" id="standalone" value="alone模式" >
+<input type="button"  name="slb" id="normal" value="normal模式" >
+ <input type="password" id="slb_pwd" placeholder="执行密码" />
+</p>
 <table border=1 style="background-color:#333333">
 <tr><th>服务器ID</th>
 <th>服务权重</th>
 <th>当前状态</th>
+<th>执行操作</th>
 </tr>
- {{range .slb}}
- <tr><td>{{ .ServerId}}</td>
- <td><center>{{.Weight}}</center></td>
-<td></td>
+{{$status:=.status}} 
+ {{range $s:=.slb}}
+ <tr><td>{{ $s.ServerId}}</td>
+ <td><center>{{$s.Weight}}</center></td>
+<td>
+{{range $st:=$status}} 
+    {{if eq $st.ServerId $s.ServerId}}
+        {{$curStatus:=$st.ServerHealthStatus}}
+        {{$curStatus}}
+    {{end}}
+{{end}}
+</td>
+<td>
+{{if eq $s.Weight "0"}}
+   <input type="button"  name="slb" id="{{$s.ServerId}}_1" value="开启" >
+{{else}}
+   <input type="button"  name="slb" id="{{$s.ServerId}}_0" value="关闭" >
+{{end}}
+</td>
 </tr>
  {{end}}
 </table>
@@ -207,6 +228,26 @@ $("#change_cancel").click(function(){
     $("#change_div").hide()       
 })
 
+$("input[name='slb']").click(function(){  
+      $(this).attr("disabled",true);  
+  var name = $(this).attr('id')
+  $.ajax({
+      url:"/opt/slbConfig",
+      method:"POST",
+      data:{
+          name:$(this).attr('id'),
+          pwd:$("#slb_pwd").val()
+          }
+  }).done(function(msg){
+      ErroAlert(msg.result); 
+      if(msg.result=="无权执行"){
+        $("#"+name).attr("disabled",false);
+      }else{
+      window.location.reload();
+      }
+     } );
+})
+
 $("button").click(function(){  
     var title = $(this).html()
   $(this).html("执行中...")  
@@ -226,7 +267,6 @@ $("button").click(function(){
       $("#"+name).attr("disabled",false);  
      } );
 })
-
     })
 })
 </script>

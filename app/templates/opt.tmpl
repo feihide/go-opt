@@ -266,10 +266,29 @@ $("#update_all_close").click(function(){
     $("#update_all").hide();       
 })
 $("span[name='update_all']").bind("click",function(){
-    $("#update_all_content").html("正在更新后端");
+    $("#update_all_content").html("开始全局更新。。。");
     $("#update_all").show();       
   var name = $(this).attr('id')
     var pwd=$("#"+name+"-pwd").val();
+  if(name=="product"){  
+  $.ajax({
+      url:"/opt/slbConfig",
+      method:"POST",
+      data:{
+          name:"alone",
+          pwd:$("#product-pwd").val()
+          }
+  }).done(function(msg){
+      if(msg.result=="ok"){
+      ErroAlert("自动切换alone模式成功");
+      }
+      else{
+        ErroAlert(msg.result); 
+      }
+      })
+  }
+    $("#update_all_content").html("正在更新后端");
+
   $.ajax({
       url:"/opt/run",
       method:"POST",
@@ -290,23 +309,8 @@ $("span[name='update_all']").bind("click",function(){
   }).done(function(msg){
       if(msg.result=="更新成功"){
         $("#update_all_content").html("前后端更新完毕");
-        if(name=='stg'){
-  $.ajax({
-      url:"/opt/slbConfig",
-      method:"POST",
-      data:{
-          name:"alone",
-          pwd:$("#product-pwd").val()
-          }
-  }).done(function(msg){
-      if(msg.result=="ok"){
-        $("#update_all_content").html("前后端更新完毕,自动切换alone模式成功");
-      }
-      else{
-        $("#update_all_content").html("前后端更新完毕,自动切换alone模式失败："+msg.result);
-      }
-      })
-        }
+        
+
         
         if(name=='product'){
   $.ajax({

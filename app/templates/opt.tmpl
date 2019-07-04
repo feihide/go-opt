@@ -299,7 +299,7 @@ $("span[name='update_all']").bind("click",function(){
           pwd:$("#product-pwd").val()
           }
   }).done(function(msg){
-      if(msg.result=="更新成功"){
+      if(msg.result=="ok"){
         $("#update_all_content").html("前后端更新完毕,自动切换alone模式成功");
       }
       else{
@@ -317,7 +317,7 @@ $("span[name='update_all']").bind("click",function(){
           pwd:pwd
           }
   }).done(function(msg){
-      if(msg.result=="更新成功"){
+      if(msg.result=="ok"){
         $("#update_all_content").html("前后端更新完毕,自动切换normal模式成功");
       }
       else{

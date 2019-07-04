@@ -247,7 +247,7 @@ $("input[name='slb']").click(function(){
       method:"POST",
       data:{
           name:$(this).attr('id'),
-          pwd:$("#product_pwd").val()
+          pwd:$("#product-pwd").val()
           }
   }).done(function(msg){
       ErroAlert(msg.result); 
@@ -292,7 +292,7 @@ $("span[name='update_all']").bind("click",function(){
       method:"POST",
       data:{
           name:"alone",
-          pwd:pwd
+          pwd:$("#product-pwd").val()
           }
   }).done(function(msg){
       if(msg.result=="更新成功"){

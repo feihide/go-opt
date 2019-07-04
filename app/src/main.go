@@ -38,7 +38,6 @@ const (
 	pre_pwd     string = "kl-pre-devops"
 	stg_pwd     string = "kl-stg-devops"
 	product_pwd string = "kl-feihide"
-	slb_pwd     string = "feihide"
 )
 
 //MARTINI_ENV=production
@@ -298,7 +297,7 @@ func main() {
 		pwd := req.PostFormValue("pwd")
 		var data string
 		//var wg sync.WaitGroup
-		if pwd == slb_pwd {
+		if pwd == product_pwd {
 			if name == "alone" {
 				//	wg.Add(4)
 				slbChangeModCall("alone")

@@ -52,7 +52,12 @@ input {
  {{range $item := .envs}}
  <tr><td>{{ $item.Title }}</td>
  <td><center>{{$item.Number}}</center></td>
- <td>{{$item.Pc }}</td>
+ {{ if eq $item.Name "product"}}
+<td><a href="http://www.kunlunhealth.com.cn" target="blank">{{$item.Pc }}</a></td>
+{{else}}
+  {{ $pre:=$item.Name}}
+<td><a href="http://{{$pre}}www.kunlunhealth.com.cn" target="blank">{{$item.Pc }}</a></td>
+{{end}}
  <td>
  <table  width="600px" border="1" class="inner">
  <tr><th>前端</th><th>后端</th><th>存储</th><th>中间件</th></tr> 
@@ -108,11 +113,17 @@ input {
  <input type="password" id="{{$item.Name}}-pwd" placeholder="执行密码" />
  </td>
  <td>
+  <span name="update_all" id="{{$item.Name}}">全局更新</span><br/>
  <span><a style="color: #FFF;" href="{{$item.Api}}/platform/flushConfig" target="_blank">刷新服务器配置</a></span> | 
- <span><a style="color: #FFF;" href="{{$item.Api}}/platform/serverStatus" target="_blank">查看服务状态</a></span> |  
+ <span><a style="color: #FFF;" href="{{$item.Api}}/platform/serverStatus" target="_blank">查看服务状态</a></span><br/> 
  <span name="config" id="{{$item.Name}}">查看</span> | <span name="change_config" id="{{$item.Name}}">编辑</span></td><tr>
  {{end}}
 </table>
+<div class="succ-pop" id="update_all">
+<center>
+<span style="color:red;"  id="update_all_content"></span><button id="update_all_close">关闭</button>
+</center>
+</div>
 <div class="succ-pop" id="change_div" >
     <center><span>    密码: </span><span><input id="change_pwd" type="password"></span></center>
     <p><input id="change_name" type="hidden" ></p>
@@ -246,6 +257,81 @@ $("input[name='slb']").click(function(){
       window.location.reload();
       }
      } );
+})
+$("#update_all_close").click(function(){
+    $("#update_all").hide();       
+})
+$("span[name='update_all']").bind("click",function(){
+    $("#update_all_content").html("正在更新后端");
+    $("#update_all").show();       
+  var name = $(this).attr('id')
+    var pwd=$("#"+name+"-pwd").val();
+  $.ajax({
+      url:"/opt/run",
+      method:"POST",
+      data:{
+          name:name+"-end-update",
+          pwd:pwd,
+          }
+  }).done(function(msg){
+      if(msg.result=="更新成功"){
+        $("#update_all_content").html("后端更新完毕，正在更新前端....");
+  $.ajax({
+      url:"/opt/run",
+      method:"POST",
+      data:{
+          name:name+"-front-update",
+          pwd:pwd,
+          }
+  }).done(function(msg){
+      if(msg.result=="更新成功"){
+        $("#update_all_content").html("前后端更新完毕");
+        if(name=='stg'){
+  $.ajax({
+      url:"/opt/slbConfig",
+      method:"POST",
+      data:{
+          name:"alone",
+          pwd:pwd
+          }
+  }).done(function(msg){
+      if(msg.result=="更新成功"){
+        $("#update_all_content").html("前后端更新完毕,自动切换alone模式成功");
+      }
+      else{
+        $("#update_all_content").html("前后端更新完毕,自动切换alone模式失败："+msg.result);
+      }
+      })
+        }
+        
+        if(name=='product'){
+  $.ajax({
+      url:"/opt/slbConfig",
+      method:"POST",
+      data:{
+          name:"normal",
+          pwd:pwd
+          }
+  }).done(function(msg){
+      if(msg.result=="更新成功"){
+        $("#update_all_content").html("前后端更新完毕,自动切换normal模式成功");
+      }
+      else{
+        $("#update_all_content").html("前后端更新完毕,自动切换normal模式失败："+msg.result);
+      }
+      })
+        }
+    
+      }
+      else{
+        $("#update_all_content").html("前端更新失败");
+      }
+      })
+      }
+      else{
+        $("#update_all_content").html("后端更新失败");
+      }
+    })
 })
 
 $("button").click(function(){  

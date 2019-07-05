@@ -123,6 +123,12 @@ input {
 <br><br><br>
 <br><br>
 <center>
+<span style="color:red;"  id="update_front_content"></span>
+</center>
+<center>
+<span style="color:red;"  id="update_end_content"></span>
+</center>
+<center>
 <span style="color:red;"  id="update_all_content"></span>
 </center>
 <center>
@@ -266,7 +272,7 @@ $("#update_all_close").click(function(){
     $("#update_all").hide();       
 })
 $("span[name='update_all']").bind("click",function(){
-    $("#update_all_content").html("开始全局更新。。。");
+    //$("#update_all_content").html("开始全局更新。。。");
     $("#update_all").show();       
   var name = $(this).attr('id')
     var pwd=$("#"+name+"-pwd").val();
@@ -280,14 +286,34 @@ $("span[name='update_all']").bind("click",function(){
           }
   }).done(function(msg){
       if(msg.result=="ok"){
-      ErroAlert("自动切换alone模式成功");
+    $("#update_all_content").html("自动切换alone模式成功");
       }
       else{
-        ErroAlert(msg.result); 
+    $("#update_all_content").html("自动切换alone模式失败："+msg.result); 
       }
       })
   }
-    $("#update_all_content").html("正在更新后端");
+  
+ $("#update_front_content").html("正在更新前端....");
+  $.ajax({
+      url:"/opt/run",
+      method:"POST",
+      data:{
+          name:name+"-front-update",
+          pwd:pwd,
+          }
+  }).done(function(msg){
+        $("#update_front_content").html("前端"+msg.result);
+        if(name=="product"){
+        $.ajax({
+            url:"http://api.kunlunhealth.com.cn/platform/flushConfig",
+            method:"GET"
+        })
+        }   
+})
+
+        
+    $("#update_end_content").html("正在更新后端....");
 
   $.ajax({
       url:"/opt/run",
@@ -298,21 +324,14 @@ $("span[name='update_all']").bind("click",function(){
           }
   }).done(function(msg){
       if(msg.result=="更新成功"){
-        $("#update_all_content").html("后端更新完毕，正在更新前端....");
-  $.ajax({
-      url:"/opt/run",
-      method:"POST",
-      data:{
-          name:name+"-front-update",
-          pwd:pwd,
-          }
-  }).done(function(msg){
-      if(msg.result=="更新成功"){
-        $("#update_all_content").html("前后端更新完毕");
-        
-
-        
-        if(name=='product'){
+        $("#update_end_content").html("后端更新成功");
+        if(name=="product"){
+        $.ajax({
+            url:"http://api.kunlunhealth.com.cn/platform/flushConfig",
+            method:"GET"
+        })
+        }   
+        if(name=='product1'){
   $.ajax({
       url:"/opt/slbConfig",
       method:"POST",
@@ -322,22 +341,16 @@ $("span[name='update_all']").bind("click",function(){
           }
   }).done(function(msg){
       if(msg.result=="ok"){
-        $("#update_all_content").html("前后端更新完毕,自动切换normal模式成功");
+        $("#update_all_content").html("自动切换normal模式成功");
       }
       else{
-        $("#update_all_content").html("前后端更新完毕,自动切换normal模式失败："+msg.result);
+        $("#update_all_content").html("自动切换normal模式失败："+msg.result);
       }
       })
         }
-    
       }
       else{
-        $("#update_all_content").html("前端更新失败");
-      }
-      })
-      }
-      else{
-        $("#update_all_content").html("后端更新失败");
+        $("#update_end_content").html("后端"+msg.result);
       }
     })
 })

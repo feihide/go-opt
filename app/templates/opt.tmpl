@@ -271,88 +271,101 @@ $("input[name='slb']").click(function(){
 $("#update_all_close").click(function(){
     $("#update_all").hide();       
 })
-$("span[name='update_all']").bind("click",function(){
-    //$("#update_all_content").html("开始全局更新。。。");
-    $("#update_all").show();       
-  var name = $(this).attr('id')
-    var pwd=$("#"+name+"-pwd").val();
-  if(name=="product"){  
-  $.ajax({
-      url:"/opt/slbConfig",
-      method:"POST",
-      data:{
-          name:"alone",
-          pwd:$("#product-pwd").val()
-          }
-  }).done(function(msg){
-      if(msg.result=="ok"){
-    $("#update_all_content").html("自动切换alone模式成功");
+
+const ajaxPromise=  param => {
+  return new Promise((resovle, reject) => {
+    $.ajax({
+      "type":param.type || "get",
+      "async":param.async || true,
+      "url":param.url,
+      "data":param.data || "",
+      "success": res => {
+        resovle(res);
+      },
+      "error": err => {
+        reject(err);
       }
-      else{
-    $("#update_all_content").html("自动切换alone模式失败："+msg.result); 
-      }
-      })
-  }
-  
- $("#update_front_content").html("正在更新前端....");
-  $.ajax({
+    })
+  })
+}
+
+let updateFront=(name,pwd)=>{
+    $("#update_end_content").html("正在更新前端....");
+    ajaxPromise({
       url:"/opt/run",
-      method:"POST",
+      type:"post",
       data:{
           name:name+"-front-update",
           pwd:pwd,
           }
-  }).done(function(msg){
+  }).then(msg=>{
         $("#update_front_content").html("前端"+msg.result);
-        if(name=="product"){
-        $.ajax({
-            url:"http://api.kunlunhealth.com.cn/platform/flushConfig",
-            method:"GET"
-        })
-        }   
+}).catch(err=>{
+        $("#update_front_content").html("前端更新异常");
 })
 
-        
-    $("#update_end_content").html("正在更新后端....");
+}
 
-  $.ajax({
+let updateEnd=(name,pwd)=>{
+    $("#update_end_content").html("正在更新后端....");
+    ajaxPromise({
       url:"/opt/run",
-      method:"POST",
+      type:"post",
       data:{
           name:name+"-end-update",
           pwd:pwd,
           }
-  }).done(function(msg){
+  }).then(msg=>{
       if(msg.result=="更新成功"){
         $("#update_end_content").html("后端更新成功");
-        if(name=="product"){
-        $.ajax({
-            url:"http://api.kunlunhealth.com.cn/platform/flushConfig",
-            method:"GET"
-        })
-        }   
-        if(name=='product1'){
-  $.ajax({
-      url:"/opt/slbConfig",
-      method:"POST",
-      data:{
-          name:"normal",
-          pwd:pwd
-          }
-  }).done(function(msg){
-      if(msg.result=="ok"){
-        $("#update_all_content").html("自动切换normal模式成功");
-      }
-      else{
-        $("#update_all_content").html("自动切换normal模式失败："+msg.result);
-      }
-      })
+        if(name=='product'){
+            changeMode('normal',pwd);
         }
       }
       else{
         $("#update_end_content").html("后端"+msg.result);
       }
     })
+}
+
+let flushConfig=()=>{
+        ajaxPromise({
+            url:"http://api.kunlunhealth.com.cn/platform/flushConfig",
+        }).then(msg=>{
+            console.log('flushconfig');
+        })
+
+}
+
+let changeMode=(mode,pwd)=>{
+   ajaxPromise({
+      url:"/opt/slbConfig",
+      type:"post",
+      data:{
+          name:mode,
+          pwd:pwd
+          }
+  }).then(msg=>{
+      if(msg.result=="ok"){
+        $("#update_all_content").html("自动切换normal模式成功");
+        flushConfig();
+      }
+      else{
+        $("#update_all_content").html("自动切换normal模式失败："+msg.result);
+      }
+        })
+}
+    
+$("span[name='update_all']").bind("click",function(){
+    //$("#update_all_content").html("开始全局更新。。。");
+    $("#update_all").show();       
+  var name = $(this).attr('id')
+    var pwd=$("#"+name+"-pwd").val();
+  if(name=="product"){  
+      changeMode('alone',pwd);
+  }
+   updateFront(name,pwd); 
+   updateEnd(name,pwd); 
 })
 
 $("button").click(function(){  

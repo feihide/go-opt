@@ -290,7 +290,7 @@ const ajaxPromise=  param => {
 }
 
 let updateFront=(name,pwd)=>{
-    $("#update_end_content").html("正在更新前端....");
+    $("#update_front_content").html("正在更新前端....");
     ajaxPromise({
       url:"/opt/run",
       type:"post",

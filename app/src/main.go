@@ -166,6 +166,23 @@ func main() {
 		}
 		return consoleStatus
 	})
+	m.Post("/opt/aliyunApiCb", func(req *http.Request) string {
+
+		data, _ := ioutil.ReadAll(req.Body)
+		fmt.Printf("ctx.Request.body: %v", string(data))
+		command := "cd /work/kl/bin && ./new_auto.sh product1  front_restart"
+
+		_, err := execCmd(command)
+		r := ""
+		if err != nil {
+			r = "更新失败"
+		} else {
+			r = "更新成功"
+		}
+		comm := "echo \" `date`  opt:" + command + " result:" + r + "\"  >> /work/auto_log.txt"
+		execCmd(comm)
+		return "ok"
+	})
 
 	m.Get("/timeout", func(req *http.Request, r render.Render) {
 		beginTime := time.Now()
@@ -359,8 +376,8 @@ func main() {
 		if isAllow == 0 {
 			data = "无权执行"
 		} else {
-			if running[tmp[0]] == false {
-				running[tmp[0]] = true
+			if running[name] == false {
+				running[name] = true
 				//command := "ls"
 				//params := []string{"-l"}
 				//执行cmd命令: ls -l
@@ -382,7 +399,7 @@ func main() {
 				//commandTest := "sleep 3&& echo 'fk'"
 				ret, err := execCmd(command)
 				fmt.Println(ret)
-				running[tmp[0]] = false
+				running[name] = false
 				if err != nil {
 					data = "更新失败"
 				} else {

@@ -300,6 +300,9 @@ let updateFront=(name,pwd)=>{
           }
   }).then(msg=>{
         $("#update_front_content").html("前端"+msg.result);
+      if(msg.result=="更新成功" && name=='product'){
+            changeMode('normal',pwd);
+        }
 }).catch(err=>{
         $("#update_front_content").html("前端更新异常");
 })
@@ -318,13 +321,11 @@ let updateEnd=(name,pwd)=>{
   }).then(msg=>{
       if(msg.result=="更新成功"){
         $("#update_end_content").html("后端更新成功");
-        if(name=='product'){
-            changeMode('normal',pwd);
-        }
       }
       else{
         $("#update_end_content").html("后端"+msg.result);
       }
+       updateFront(name,pwd); 
     })
 }
 
@@ -347,11 +348,11 @@ let changeMode=(mode,pwd)=>{
           }
   }).then(msg=>{
       if(msg.result=="ok"){
-        $("#update_all_content").html("自动切换normal模式成功");
+        $("#update_all_content").html("自动切换"+mode+"模式成功");
         flushConfig();
       }
       else{
-        $("#update_all_content").html("自动切换normal模式失败："+msg.result);
+        $("#update_all_content").html("自动切换"+mode+"模式失败："+msg.result);
       }
         })
 }
@@ -364,7 +365,6 @@ $("span[name='update_all']").bind("click",function(){
   if(name=="product"){  
       changeMode('alone',pwd);
   }
-   updateFront(name,pwd); 
    updateEnd(name,pwd); 
 })
 

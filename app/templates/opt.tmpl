@@ -359,6 +359,8 @@ let changeMode=(mode,pwd)=>{
     
 $("span[name='update_all']").bind("click",function(){
     //$("#update_all_content").html("开始全局更新。。。");
+        $("#update_end_content").html("后端等待更新");
+        $("#update_front_content").html("前端等待更新");
     $("#update_all").show();       
   var name = $(this).attr('id')
     var pwd=$("#"+name+"-pwd").val();

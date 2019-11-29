@@ -193,7 +193,7 @@ func (w Worker) Start() {
 			select {
 			case job := <-w.JobChannel:
 				atomic.AddUint64(&GetMsg, 1)
-
+				//模拟任务处理时间
 				//timeChan:=<-time.After(10 * time.Second):
 				time.Sleep(time.Second * time.Duration(job.TimeOut))
 				log.Println("worker:", w.ID, "| jobID:", job.ID, "|content:", job.Msg.Content)

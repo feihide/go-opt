@@ -171,6 +171,8 @@ func main() {
 		data, _ := ioutil.ReadAll(req.Body)
 		fmt.Printf("ctx.Request.body: %v", string(data))
 		command := "cd /work/kl/bin && ./new_auto.sh product1  front_restart"
+		command += "&& ./new_auto.sh product2  front_restart"
+		command += "&& ./new_auto.sh product3  front_restart"
 
 		_, err := execCmd(command)
 		r := ""
@@ -179,6 +181,8 @@ func main() {
 		} else {
 			r = "更新成功"
 		}
+		msg := "生产触发自动重启修复，结果:" + r
+		go sendSms("15921709039", msg)
 		comm := "echo \" `date`  opt:" + command + " result:" + r + "\"  >> /work/auto_log.txt"
 		execCmd(comm)
 		return "ok"
@@ -296,7 +300,7 @@ func main() {
 			r.JSON(200, map[string]interface{}{"result": "无权限执行"})
 		} else {
 			ioutil.WriteFile("/work/kl/bin/"+name+"_export.cnf", []byte(content), 0644)
-			command := "svn ci -m'自动更新配置！!!' /work/kl/bin/" + name + "_export.cnf"
+			command := "cd /work/kl && git commit -m'自动更新配置！!!' bin/" + name + "_export.cnf && git push"
 			ret, err := execCmd(command)
 			fmt.Println(ret)
 			data := ""
